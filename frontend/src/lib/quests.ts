@@ -42,14 +42,7 @@ export interface StreakInfo {
 
 /* ── Quest catalogue ─────────────────────────────────────── */
 
-export const QUESTS: Quest[] = [
-  { id: 'q-ship-feature',       type: 'Builder',     title: 'Ship One Small Feature',       points: 25, time: '~45 min',   description: 'Commit and push at least one meaningful change to a personal or community project.' },
-  { id: 'q-help-builder',       type: 'Community',   title: 'Help Another Builder',          points: 15, time: '~20 min',   description: 'Answer a question, review code, or give feedback to someone in the community.' },
-  { id: 'q-study-30',           type: 'Learning',    title: 'Study for 30 Minutes',          points: 10, time: '30 min',    description: 'Read docs, watch a talk, or learn something new and share a short summary.' },
-  { id: 'q-attend-event',       type: 'Show Up',     title: 'Attend an Event or Session',    points: 20, time: 'Variable',  description: 'Join an AgentsClan event, AMA, or workshop live.' },
-  { id: 'q-share-progress',     type: 'Social',      title: 'Share Your Build Progress',     points: 10, time: '~10 min',   description: 'Post an honest progress update in the community or on socials.' },
-  { id: 'q-open-source',        type: 'Open Source',  title: 'Make One Contribution',         points: 35, time: '~60+ min',  description: 'Open a pull request or file a helpful issue in an open-source project.' },
-];
+export const QUESTS: Quest[] = [];
 
 export const MAX_DAILY_POINTS = QUESTS.reduce((s, q) => s + q.points, 0);
 

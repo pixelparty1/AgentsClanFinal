@@ -8,9 +8,8 @@ import GradientHeading from '@/components/ui/GradientHeading';
 import QuestCard from '@/components/quests/QuestCard';
 import QuestModal from '@/components/quests/QuestModal';
 import QuestProgressBar from '@/components/quests/QuestProgressBar';
+import { questsApi } from '@/lib/api';
 import {
-  QUESTS,
-  MAX_DAILY_POINTS,
   submitQuestProof,
   fetchTodaySubmissions,
   fetchStreak,
@@ -23,14 +22,52 @@ import {
 const TEMP_USER_ID = 'demo-user-001';
 
 export default function DailyQuestsContent() {
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [submissions, setSubmissions] = useState<QuestSubmission[]>([]);
   const [streak, setStreak] = useState(0);
 
-  // Load today's submissions & streak on mount
+  // Load quests from API and today's submissions & streak on mount
   useEffect(() => {
-    fetchTodaySubmissions(TEMP_USER_ID).then(setSubmissions);
-    fetchStreak(TEMP_USER_ID).then((s) => setStreak(s.current));
+    (async () => {
+      try {
+        // Fetch quests from backend API
+        const questsResponse = await questsApi.list();
+        const activeQuests = (questsResponse.data?.items || []).filter((q: any) => q.active !== false);
+        
+        // Transform API quests to Quest interface
+        const transformedQuests: Quest[] = activeQuests.map((q: any) => ({
+          id: q.$id,
+          title: q.title,
+          description: q.description,
+          points: q.points,
+          type: q.type || 'Builder', // Default type if not provided
+          time: q.time || 'Variable', // Default time if not provided
+        }));
+        
+        setQuests(transformedQuests);
+      } catch (error) {
+        console.error('Failed to fetch quests:', error);
+        toast.error('Failed to load quests', {
+          style: { background: '#111', color: '#ff6b6b', border: '1px solid rgba(255,100,100,0.25)' },
+        });
+      }
+
+      try {
+        // Fetch today's submissions
+        const subs = await fetchTodaySubmissions(TEMP_USER_ID);
+        setSubmissions(subs);
+
+        // Fetch streak
+        const streakInfo = await fetchStreak(TEMP_USER_ID);
+        setStreak(streakInfo.current);
+      } catch (error) {
+        console.error('Failed to fetch submissions/streak:', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   /** Map quest id → latest submission */
@@ -57,10 +94,15 @@ export default function DailyQuestsContent() {
     return submissions
       .filter((s) => s.status === 'approved')
       .reduce((sum, s) => {
-        const quest = QUESTS.find((q) => q.id === s.quest_id);
+        const quest = quests.find((q) => q.id === s.quest_id);
         return sum + (quest?.points ?? 0);
       }, 0);
-  }, [submissions]);
+  }, [submissions, quests]);
+
+  /** Max daily points from current quests */
+  const maxDailyPoints = useMemo(() => {
+    return quests.reduce((sum, q) => sum + q.points, 0);
+  }, [quests]);
 
   /** Handle proof submission from modal */
   const handleSubmitProof = useCallback(
@@ -113,23 +155,33 @@ export default function DailyQuestsContent() {
 
       {/* Progress + Streak */}
       <section className="px-6 md:px-[120px] pb-6">
-        <QuestProgressBar earnedPoints={earnedPoints} maxPoints={MAX_DAILY_POINTS} streak={streak} />
+        <QuestProgressBar earnedPoints={earnedPoints} maxPoints={maxDailyPoints} streak={streak} />
       </section>
 
       {/* Quest grid */}
       <section className="px-6 md:px-[120px] pb-16 md:pb-24 border-t border-white/10 pt-12 md:pt-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {QUESTS.map((quest, i) => (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              status={getStatus(quest.id)}
-              approvedPoints={quest.points}
-              index={i}
-              onClick={() => setSelectedQuest(quest)}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-white/60">Loading quests...</p>
+          </div>
+        ) : quests.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-white/60">No quests available yet. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {quests.map((quest, i) => (
+              <QuestCard
+                key={quest.id}
+                quest={quest}
+                status={getStatus(quest.id)}
+                approvedPoints={quest.points}
+                index={i}
+                onClick={() => setSelectedQuest(quest)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Modal / Side Drawer */}

@@ -7,7 +7,6 @@ import GradientHeading from '@/components/ui/GradientHeading';
 import { GlowCard } from '@/components/ui/glow-card';
 import { 
   getQuests, 
-  getQuestSubmissions,
   createQuest, 
   updateQuest, 
   deleteQuest,
@@ -30,10 +29,7 @@ export default function QuestsAdmin() {
     title: '',
     description: '',
     points: '',
-    category: 'social',
-    difficulty: 'easy' as Quest['difficulty'],
-    estimated_time: '',
-    is_active: true,
+    active: true,
   });
 
   useEffect(() => {
@@ -42,12 +38,8 @@ export default function QuestsAdmin() {
 
   async function fetchData() {
     try {
-      const [questsData, submissionsData] = await Promise.all([
-        getQuests(),
-        getQuestSubmissions(),
-      ]);
+      const questsData = await getQuests();
       setQuests(questsData);
-      setSubmissions(submissionsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -62,10 +54,7 @@ export default function QuestsAdmin() {
         title: formData.title,
         description: formData.description || null,
         points: parseInt(formData.points),
-        category: formData.category,
-        difficulty: formData.difficulty,
-        estimated_time: formData.estimated_time || null,
-        is_active: formData.is_active,
+        active: formData.active,
       };
 
       if (editingQuest) {
@@ -116,10 +105,7 @@ export default function QuestsAdmin() {
       title: '',
       description: '',
       points: '',
-      category: 'social',
-      difficulty: 'easy' as Quest['difficulty'],
-      estimated_time: '',
-      is_active: true,
+      active: true,
     });
     setShowModal(true);
   }
@@ -130,10 +116,7 @@ export default function QuestsAdmin() {
       title: quest.title,
       description: quest.description || '',
       points: String(quest.points),
-      category: quest.category,
-      difficulty: quest.difficulty,
-      estimated_time: quest.estimated_time || '',
-      is_active: quest.is_active,
+      active: quest.active,
     });
     setShowModal(true);
   }
@@ -259,13 +242,10 @@ export default function QuestsAdmin() {
                           <Target className="w-5 h-5 text-emerald-400" />
                         </div>
                         <div>
-                          <span className="text-xs text-gray-500 uppercase tracking-wider">
-                            {quest.category}
-                          </span>
                           <h3 className="font-semibold">{quest.title}</h3>
                         </div>
                       </div>
-                      {!quest.is_active && (
+                      {!quest.active && (
                         <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">
                           Inactive
                         </span>
@@ -279,9 +259,6 @@ export default function QuestsAdmin() {
                     <div className="flex items-center gap-4 mb-4">
                       <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-400">
                         {quest.points} XP
-                      </span>
-                      <span className="px-2 py-1 text-xs rounded-full bg-gray-500/10 text-gray-400">
-                        {quest.difficulty}
                       </span>
                     </div>
                     
@@ -446,60 +423,23 @@ export default function QuestsAdmin() {
                 />
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Points</label>
-                  <input
-                    type="number"
-                    value={formData.points}
-                    onChange={(e) => setFormData({ ...formData, points: e.target.value })}
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white focus:outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="social">Social</option>
-                    <option value="content">Content</option>
-                    <option value="community">Community</option>
-                    <option value="referral">Referral</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Difficulty</label>
-                  <select
-                    value={formData.difficulty}
-                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as 'easy' | 'medium' | 'hard' })}
-                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white focus:outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-              </div>
-              
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Estimated Time (optional)</label>
+                <label className="block text-sm text-gray-400 mb-2">Points</label>
                 <input
-                  type="text"
-                  value={formData.estimated_time}
-                  onChange={(e) => setFormData({ ...formData, estimated_time: e.target.value })}
-                  placeholder="e.g., 5 minutes, 1 hour"
+                  type="number"
+                  value={formData.points}
+                  onChange={(e) => setFormData({ ...formData, points: e.target.value })}
+                  required
                   className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
               
+              
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  checked={formData.active}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                   className="w-4 h-4 rounded bg-emerald-950/30 border-emerald-900/30 text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="text-sm text-gray-400">Active (visible to users)</span>

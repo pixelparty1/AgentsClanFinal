@@ -3,7 +3,7 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 
 import { databases, DATABASE_ID, COLLECTIONS, client } from './appwrite';
-import { eventsApi, productsApi } from './api';
+import { eventsApi, productsApi, questsApi } from './api';
 import { Query, ID, Models } from 'appwrite';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -118,16 +118,9 @@ export interface Membership extends Models.Document {
 
 export interface Quest extends Models.Document {
   title: string;
-  description: string | null;
+  description: string;
   points: number;
-  category: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  estimated_time: string | null;
-  is_active: boolean;
-  is_daily: boolean;
-  max_submissions: number | null;
-  start_date: string | null;
-  end_date: string | null;
+  active: boolean;
 }
 
 export interface QuestSubmission extends Models.Document {
@@ -372,24 +365,25 @@ export async function getMemberships(limit = 100): Promise<Membership[]> {
 
 // --- Quests ---
 export async function getQuests(): Promise<Quest[]> {
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUESTS, [
-    Query.orderDesc('$createdAt'),
-  ]);
-  return result.documents as unknown as Quest[];
+  const response = await questsApi.list();
+  return response.data?.items || [];
 }
 
 export async function createQuest(data: CreateData<Quest>): Promise<Quest> {
-  const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUESTS, ID.unique(), data as Record<string, unknown>);
-  return doc as unknown as Quest;
+  const response = await questsApi.create(data as any);
+  if (!response.success) throw new Error(response.error);
+  return response.data;
 }
 
 export async function updateQuest(id: string, data: CreateData<Quest>): Promise<Quest> {
-  const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUESTS, id, data as Record<string, unknown>);
-  return doc as unknown as Quest;
+  const response = await questsApi.update(id, data as any);
+  if (!response.success) throw new Error(response.error);
+  return response.data;
 }
 
 export async function deleteQuest(id: string): Promise<void> {
-  await databases.deleteDocument(DATABASE_ID, COLLECTIONS.QUESTS, id);
+  const response = await fetch(`/api/quests/${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error('Failed to delete quest');
 }
 
 // --- Quest Submissions ---

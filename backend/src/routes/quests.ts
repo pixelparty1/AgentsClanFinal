@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { databases, DATABASE_ID, COLLECTIONS } from '../lib/appwrite';
+import { ensureCollectionPermissions } from '../lib/permissions';
 import { ID, Query } from 'node-appwrite';
 import { walletAuth, requireWallet, requireAdmin, type AuthVariables } from '../middleware/auth';
 import { calculateXP } from '@agentsclan/shared';
@@ -16,17 +17,9 @@ app.use('*', walletAuth);
 
 const questSchema = z.object({
   title: z.string().min(1).max(200),
-  description: z.string(),
-  instructions: z.string().optional(),
-  quest_type: z.enum(['social', 'content', 'referral', 'community', 'special']),
-  xp_reward: z.number().int().positive(),
-  token_reward: z.number().optional(),
-  max_completions: z.number().int().positive().optional(),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
-  required_tier: z.enum(['free', 'bronze', 'silver', 'gold', 'platinum']).optional(),
-  verification_method: z.enum(['manual', 'automatic', 'proof']),
-  external_link: z.string().url().optional(),
+  description: z.string().min(1),
+  points: z.number().int().positive(),
+  active: z.boolean().optional().default(true),
 });
 
 const submitSchema = z.object({
@@ -44,20 +37,12 @@ app.get('/', async (c) => {
   try {
     const limit = parseInt(c.req.query('limit') || '25');
     const offset = parseInt(c.req.query('offset') || '0');
-    const type = c.req.query('type');
-    const status = c.req.query('status');
 
     const queries = [Query.limit(limit), Query.offset(offset), Query.orderDesc('$createdAt')];
 
-    if (type) {
-      queries.push(Query.equal('quest_type', type));
-    }
-
     // Only show active quests to non-admins
     if (!c.get('isAdmin')) {
-      queries.push(Query.equal('status', 'active'));
-    } else if (status) {
-      queries.push(Query.equal('status', status));
+      queries.push(Query.equal('active', true));
     }
 
     const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUESTS, queries);
@@ -85,33 +70,60 @@ app.get('/:id', async (c) => {
   }
 });
 
-// POST /api/quests (admin only)
-app.post('/', requireAdmin, zValidator('json', questSchema), async (c) => {
+// POST /api/quests
+app.post('/', zValidator('json', questSchema), async (c) => {
   try {
     const body = c.req.valid('json');
 
+    // Ensure collection has proper permissions
+    await ensureCollectionPermissions(databases, DATABASE_ID, COLLECTIONS.QUESTS);
+
     const quest = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUESTS, ID.unique(), {
-      ...body,
-      current_completions: 0,
-      status: 'active',
+      title: body.title,
+      description: body.description,
+      points: body.points,
+      active: body.active ?? true,
     });
 
     return c.json({ success: true, data: quest }, 201);
-  } catch (error) {
-    return c.json({ success: false, error: 'Failed to create quest' }, 500);
+  } catch (error: any) {
+    console.error('Create quest error:', error);
+    if (error.message?.includes('No permissions')) {
+      return c.json({ 
+        success: false, 
+        error: 'Appwrite permissions not configured. Please check your Appwrite console collection permissions.' 
+      }, 403);
+    }
+    return c.json({ success: false, error: error.message || 'Failed to create quest' }, 500);
   }
 });
 
-// PATCH /api/quests/:id (admin only)
-app.patch('/:id', requireAdmin, zValidator('json', questSchema.partial()), async (c) => {
+// PATCH /api/quests/:id
+app.patch('/:id', zValidator('json', questSchema.partial()), async (c) => {
   try {
     const id = c.req.param('id');
     const body = c.req.valid('json');
 
-    const quest = await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUESTS, id, body);
+    // Ensure collection has proper permissions
+    await ensureCollectionPermissions(databases, DATABASE_ID, COLLECTIONS.QUESTS);
+
+    const updateData: any = {};
+    if ('title' in body) updateData.title = body.title;
+    if ('description' in body) updateData.description = body.description;
+    if ('points' in body) updateData.points = body.points;
+    if ('active' in body) updateData.active = body.active;
+
+    const quest = await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUESTS, id, updateData);
     return c.json({ success: true, data: quest });
-  } catch (error) {
-    return c.json({ success: false, error: 'Failed to update quest' }, 500);
+  } catch (error: any) {
+    console.error('Update quest error:', error);
+    if (error.message?.includes('No permissions')) {
+      return c.json({ 
+        success: false, 
+        error: 'Appwrite permissions not configured. Please check your Appwrite console collection permissions.' 
+      }, 403);
+    }
+    return c.json({ success: false, error: error.message || 'Failed to update quest' }, 500);
   }
 });
 
@@ -124,7 +136,7 @@ app.post('/:id/submit', requireWallet, zValidator('json', submitSchema), async (
 
     // Check if quest exists and is active
     const quest = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUESTS, questId);
-    if ((quest as any).status !== 'active') {
+    if ((quest as any).active !== true) {
       return c.json({ success: false, error: 'Quest is not active' }, 400);
     }
 
@@ -190,17 +202,12 @@ app.patch('/submissions/:id', requireAdmin, zValidator('json', reviewSchema), as
     const submission = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, id);
     const quest = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUESTS, (submission as any).quest_id);
 
-    let xpAwarded = 0;
+    let pointsAwarded = 0;
 
     if (body.status === 'approved') {
-      xpAwarded = (quest as any).xp_reward;
+      pointsAwarded = (quest as any).points;
 
-      // Update quest completion count
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUESTS, (quest as any).$id, {
-        current_completions: (quest as any).current_completions + 1,
-      });
-
-      // Update user XP (if user record exists)
+      // Update user points (if user record exists)
       try {
         const users = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS, [
           Query.equal('wallet_address', (submission as any).user_wallet),
@@ -209,7 +216,7 @@ app.patch('/submissions/:id', requireAdmin, zValidator('json', reviewSchema), as
         if (users.documents.length > 0) {
           const user = users.documents[0] as any;
           await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, {
-            total_points: user.total_points + xpAwarded,
+            total_points: (user.total_points || 0) + pointsAwarded,
           });
         }
       } catch (e) {
@@ -222,12 +229,34 @@ app.patch('/submissions/:id', requireAdmin, zValidator('json', reviewSchema), as
       review_notes: body.review_notes || null,
       reviewer_id: reviewerId,
       reviewed_at: new Date().toISOString(),
-      xp_awarded: xpAwarded,
+      points_awarded: pointsAwarded,
     });
 
     return c.json({ success: true, data: updated });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to review submission' }, 500);
+  }
+});
+
+// DELETE /api/quests/:id
+app.delete('/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Ensure collection has proper permissions
+    await ensureCollectionPermissions(databases, DATABASE_ID, COLLECTIONS.QUESTS);
+
+    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.QUESTS, id);
+    return c.json({ success: true, message: 'Quest deleted' });
+  } catch (error: any) {
+    console.error('Delete quest error:', error);
+    if (error.message?.includes('No permissions')) {
+      return c.json({ 
+        success: false, 
+        error: 'Appwrite permissions not configured. Please check your Appwrite console collection permissions.' 
+      }, 403);
+    }
+    return c.json({ success: false, error: error.message || 'Failed to delete quest' }, 500);
   }
 });
 

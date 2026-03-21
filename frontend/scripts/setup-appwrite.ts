@@ -232,20 +232,12 @@ async function createCollections() {
       name: 'Quests',
       attributes: [
         { type: 'string', key: 'title', size: 256, required: true },
-        { type: 'string', key: 'description', size: 2048, required: false },
+        { type: 'string', key: 'description', size: 2048, required: true },
         { type: 'integer', key: 'points', required: true, default: 10 },
-        { type: 'string', key: 'category', size: 64, required: true },
-        { type: 'enum', key: 'difficulty', elements: ['easy', 'medium', 'hard'], required: false, default: 'easy' },
-        { type: 'string', key: 'estimated_time', size: 32, required: false },
-        { type: 'boolean', key: 'is_active', required: false, default: true },
-        { type: 'boolean', key: 'is_daily', required: false, default: false },
-        { type: 'integer', key: 'max_submissions', required: false },
-        { type: 'datetime', key: 'start_date', required: false },
-        { type: 'datetime', key: 'end_date', required: false },
+        { type: 'boolean', key: 'active', required: false, default: true },
       ],
       indexes: [
-        { key: 'category_idx', type: 'key', attributes: ['category'] },
-        { key: 'active_idx', type: 'key', attributes: ['is_active'] },
+        { key: 'active_idx', type: 'key', attributes: ['active'] },
       ],
     },
 
@@ -381,9 +373,9 @@ async function createCollections() {
         col.name,
         [
           Permission.read(Role.any()),
-          Permission.create(Role.users()),
-          Permission.update(Role.users()),
-          Permission.delete(Role.users()),
+          Permission.create(Role.any()),
+          Permission.update(Role.any()),
+          Permission.delete(Role.any()),
         ]
       );
       console.log(`✅ Collection "${col.name}" created`);
@@ -537,12 +529,54 @@ async function seedQuests() {
   }
 }
 
+async function updateCollectionPermissions() {
+  // List of collection IDs that need permission updates
+  const collectionIds = [
+    'users',
+    'posts',
+    'events',
+    'products',
+    'orders',
+    'order_items',
+    'memberships',
+    'quests',
+    'quest_submissions',
+    'job_applications',
+    'announcements',
+    'analytics_daily',
+    'nft_transactions',
+  ];
+
+  console.log('📋 Updating collection permissions...\n');
+
+  for (const collId of collectionIds) {
+    try {
+      await databases.updateCollection(
+        DATABASE_ID,
+        collId,
+        collId.charAt(0).toUpperCase() + collId.slice(1),
+        [
+          Permission.read(Role.any()),
+          Permission.create(Role.any()),
+          Permission.update(Role.any()),
+          Permission.delete(Role.any()),
+        ]
+      );
+      console.log(`✅ Updated permissions for "${collId}"`);
+    } catch (e: any) {
+      console.log(`⚠️  Could not update "${collId}": ${e.message}`);
+    }
+  }
+}
+
 async function main() {
   console.log('\n🚀 Setting up Appwrite Database for AgentsClan\n');
   
   await createDatabase();
   console.log('');
   await createCollections();
+  console.log('');
+  await updateCollectionPermissions();
   console.log('');
   await createStorageBuckets();
   console.log('');
