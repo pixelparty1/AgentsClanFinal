@@ -3,7 +3,7 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 
 import { databases, DATABASE_ID, COLLECTIONS, client } from './appwrite';
-import { eventsApi } from './api';
+import { eventsApi, productsApi } from './api';
 import { Query, ID, Models } from 'appwrite';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -59,17 +59,11 @@ export interface Product extends Models.Document {
   name: string;
   handle: string;
   description: string | null;
-  details: string[];
   price: number;
-  compare_price: number | null;
   category: string;
-  images: string[];
   sizes: string[];
-  stock: number;
-  is_active: boolean;
-  badge: string | null;
-  rating: number;
-  review_count: number;
+  stock: boolean;
+  active: boolean;
 }
 
 export interface Order extends Models.Document {
@@ -333,25 +327,22 @@ export async function deleteEvent(id: string): Promise<void> {
 
 // --- Products ---
 export async function getProducts(limit = 100): Promise<Product[]> {
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PRODUCTS, [
-    Query.orderDesc('$createdAt'),
-    Query.limit(limit),
-  ]);
-  return result.documents as unknown as Product[];
+  const response = await productsApi.list({ limit }) as any;
+  return response.data.items as Product[];
 }
 
 export async function createProduct(data: CreateData<Product>): Promise<Product> {
-  const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.PRODUCTS, ID.unique(), data as Record<string, unknown>);
-  return doc as unknown as Product;
+  const response = await productsApi.create(data as Partial<Product>);
+  return response.data as Product;
 }
 
 export async function updateProduct(id: string, data: CreateData<Product>): Promise<Product> {
-  const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.PRODUCTS, id, data as Record<string, unknown>);
-  return doc as unknown as Product;
+  const response = await productsApi.update(id, data as Partial<Product>);
+  return response.data as Product;
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PRODUCTS, id);
+  await productsApi.delete(id);
 }
 
 // --- Orders ---

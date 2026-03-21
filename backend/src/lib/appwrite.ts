@@ -10,7 +10,7 @@ const client = new Client();
 
 client
   .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-  .setProject(process.env.APPWRITE_PROJECT_ID || '')
+  .setProject(process.env.APPWRITE_PROJECT_ID || '69a7f212001b0a737d22')
   .setKey(process.env.APPWRITE_API_KEY || '');
 
 // Export services
@@ -40,7 +40,7 @@ export const COLLECTIONS = {
 
 // Storage Bucket IDs
 export const BUCKETS = {
-  PRODUCT_IMAGES: 'product_images',
+  PRODUCT_IMAGES: '69ac2f1900366fd84f06',
   QUEST_PROOFS: 'quest_proofs',
   RESUMES: 'resumes',
   AVATARS: 'avatars',

@@ -1,4 +1,42 @@
+
 'use client';
+
+// ProductImage component for image error handling
+function ProductImage({ images, name }: { images: string; name: string }) {
+  const [imageError, setImageError] = useState(false);
+  try {
+    const imageArr = JSON.parse(images);
+    const firstImage = Array.isArray(imageArr) ? imageArr[0] : imageArr;
+    if (firstImage && typeof firstImage === 'string') {
+      // If the string is a full URL, use it directly
+      const isUrl = firstImage.startsWith('http://') || firstImage.startsWith('https://');
+      const src = isUrl
+        ? firstImage
+        : `https://cloud.appwrite.io/v1/storage/buckets/69ac2f1900366fd84f06/files/${firstImage}/preview?width=500&height=500&project=69a7f212001b0a737d22`;
+      if (imageError) {
+        return (
+          <div className="absolute inset-0 flex items-center justify-center bg-emerald-950/40">
+            <Package className="w-16 h-16 text-emerald-900/50" />
+          </div>
+        );
+      }
+      return (
+        <img
+          key={`img-${firstImage}`}
+          src={src}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={() => {
+            setImageError(true);
+          }}
+        />
+      );
+    }
+  } catch (e) {
+    console.error('Error parsing images:', e, images);
+  }
+  return <Package className="w-16 h-16 text-emerald-900/50" />;
+}
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -18,12 +56,11 @@ export default function ProductsAdmin() {
     handle: '',
     description: '',
     price: '',
-    compare_price: '',
     category: 'general',
-    stock: '',
+    stock: true,
     sizes: '',
-    badge: '',
-    is_active: true,
+    photos: [] as File[],
+    active: true,
   });
 
   useEffect(() => {
@@ -43,30 +80,77 @@ export default function ProductsAdmin() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.name.trim()) {
+      alert('Please enter product name');
+      return;
+    }
+    if (!formData.price || parseInt(formData.price) <= 0) {
+      alert('Please enter valid price');
+      return;
+    }
+    if (!formData.category) {
+      alert('Please select a category');
+      return;
+    }
+    
     try {
       const payload = {
         name: formData.name,
         handle: formData.handle || formData.name.toLowerCase().replace(/\s+/g, '-'),
         description: formData.description,
-        price: parseInt(formData.price) * 100, // Convert to paisa
-        compare_price: formData.compare_price ? parseInt(formData.compare_price) * 100 : null,
+        price: parseInt(formData.price),
         category: formData.category,
-        stock: parseInt(formData.stock) || 0,
-        sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : [],
-        badge: formData.badge || null,
-        is_active: formData.is_active,
+        stock: formData.stock,
+        sizes: formData.sizes,
+        active: formData.active,
+      };
+
+      let imageFileIds: string[] = [];
+      
+      // Upload images if any
+      if (formData.photos && formData.photos.length > 0) {
+        const formDataWithFiles = new FormData();
+        formData.photos.forEach((photo) => {
+          formDataWithFiles.append('files', photo);
+        });
+        
+        try {
+          const uploadResponse = await fetch('http://localhost:3001/api/products/upload', {
+            method: 'POST',
+            body: formDataWithFiles,
+            headers: {
+              'X-Wallet-Address': localStorage.getItem('walletAddress') || '',
+            },
+          });
+          
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            imageFileIds = uploadData.data?.fileIds || [];
+          }
+        } catch (uploadError) {
+          console.warn('Failed to upload images:', uploadError);
+        }
+      }
+
+      const finalPayload = {
+        ...payload,
+        images: imageFileIds,
       };
 
       if (editingProduct) {
-        await updateProduct(editingProduct.$id, payload);
+        await updateProduct(editingProduct.$id, finalPayload);
       } else {
-        await createProduct(payload);
+        await createProduct(finalPayload);
       }
       
       fetchProducts();
       closeModal();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to save product:', error);
+      alert(`Failed to save product: ${errorMessage}`);
     }
   }
 
@@ -88,12 +172,11 @@ export default function ProductsAdmin() {
       handle: '',
       description: '',
       price: '',
-      compare_price: '',
       category: 'general',
-      stock: '',
+      stock: true,
       sizes: '',
-      badge: '',
-      is_active: true,
+      photos: [],
+      active: true,
     });
     setShowModal(true);
   }
@@ -104,13 +187,12 @@ export default function ProductsAdmin() {
       name: product.name,
       handle: product.handle,
       description: product.description || '',
-      price: String(product.price / 100),
-      compare_price: product.compare_price ? String(product.compare_price / 100) : '',
+      price: String(product.price),
       category: product.category,
-      stock: String(product.stock),
-      sizes: product.sizes?.join(', ') || '',
-      badge: product.badge || '',
-      is_active: product.is_active,
+      stock: product.stock,
+      sizes: typeof product.sizes === 'string' ? product.sizes : (product.sizes?.[0] || ''),
+      photos: [],
+      active: product.active,
     });
     setShowModal(true);
   }
@@ -129,7 +211,7 @@ export default function ProductsAdmin() {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 0,
-    }).format(price / 100);
+    }).format(price);
   };
 
   return (
@@ -181,15 +263,14 @@ export default function ProductsAdmin() {
               <GlowCard>
                 <div className="rounded-2xl border border-emerald-900/30 bg-emerald-950/20 overflow-hidden h-full">
                   {/* Product Image Placeholder */}
-                  <div className="aspect-square bg-emerald-950/40 flex items-center justify-center relative">
-                    <Package className="w-16 h-16 text-emerald-900/50" />
-                    {product.badge && (
-                      <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium rounded-full bg-amber-500 text-black">
-                        {product.badge}
-                      </span>
+                  <div className="aspect-square bg-emerald-950/40 flex items-center justify-center relative overflow-hidden group">
+                    {product.images && typeof product.images === 'string' && product.images.trim().length > 0 ? (
+                      <ProductImage images={product.images} name={product.name} />
+                    ) : (
+                      <Package className="w-16 h-16 text-emerald-900/50" />
                     )}
-                    {!product.is_active && (
-                      <span className="absolute top-3 right-3 px-2 py-1 text-xs font-medium rounded-full bg-red-500/20 text-red-400">
+                    {!product.active && (
+                      <span className="absolute top-3 right-3 px-2 py-1 text-xs font-medium rounded-full bg-red-500/20 text-red-400 z-10">
                         Inactive
                       </span>
                     )}
@@ -204,17 +285,12 @@ export default function ProductsAdmin() {
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign className="w-4 h-4 text-emerald-400" />
                       <span className="font-bold text-lg">{formatPrice(product.price)}</span>
-                      {product.compare_price && (
-                        <span className="text-sm text-gray-500 line-through">
-                          {formatPrice(product.compare_price)}
-                        </span>
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-4 mb-4 text-sm text-gray-400">
                       <div className="flex items-center gap-1">
                         <Box className="w-4 h-4" />
-                        <span>{product.stock} in stock</span>
+                        <span>{product.stock ? 'In Stock' : 'Out of Stock'}</span>
                       </div>
                       <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-400">
                         {product.category}
@@ -294,7 +370,7 @@ export default function ProductsAdmin() {
                 />
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Price (₹)</label>
                   <input
@@ -306,61 +382,58 @@ export default function ProductsAdmin() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Compare Price (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.compare_price}
-                    onChange={(e) => setFormData({ ...formData, compare_price: e.target.value })}
-                    placeholder="Optional"
-                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
                   <label className="block text-sm text-gray-400 mb-2">Stock</label>
-                  <input
-                    type="number"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Category</label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={formData.stock ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value === 'true' })}
                     className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white focus:outline-none focus:border-emerald-500/50"
                   >
-                    <option value="general">General</option>
-                    <option value="Hoodies">Hoodies</option>
-                    <option value="T-Shirts">T-Shirts</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Stickers">Stickers</option>
+                    <option value="true">In Stock</option>
+                    <option value="false">Out of Stock</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Badge</label>
-                  <input
-                    type="text"
-                    value={formData.badge}
-                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                    placeholder="e.g., Best Seller, New"
-                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50"
-                  />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Sizes (comma-separated)</label>
+                <label className="block text-sm text-gray-400 mb-2">Upload Photos</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => setFormData({ ...formData, photos: Array.from(e.target.files || []) })}
+                    className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-black hover:file:bg-emerald-400"
+                  />
+                </div>
+                {formData.photos.length > 0 && (
+                  <div className="mt-3 text-sm text-gray-400">
+                    {formData.photos.length} file(s) selected
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white focus:outline-none focus:border-emerald-500/50"
+                >
+                  <option value="general">General</option>
+                  <option value="Hoodies">Hoodies</option>
+                  <option value="T-Shirts">T-Shirts</option>
+                  <option value="Accessories">Accessories</option>
+                  <option value="Stickers">Stickers</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Sizes</label>
                 <input
                   type="text"
                   value={formData.sizes}
                   onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
-                  placeholder="e.g., S, M, L, XL"
+                  placeholder="e.g., small, medium, large"
                   className="w-full px-4 py-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
@@ -368,8 +441,8 @@ export default function ProductsAdmin() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  checked={formData.active}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                   className="w-4 h-4 rounded bg-emerald-950/30 border-emerald-900/30 text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="text-sm text-gray-400">Active (visible in store)</span>

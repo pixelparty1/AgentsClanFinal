@@ -70,7 +70,19 @@ async function apiFetch<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    let errorMessage = 'Unknown error';
+    
+    if (error.message && typeof error.message === 'string') {
+      errorMessage = error.message;
+    } else if (error.error && typeof error.error === 'string') {
+      errorMessage = error.error;
+    } else if (error.details && typeof error.details === 'string') {
+      errorMessage = error.details;
+    } else {
+      errorMessage = `HTTP ${response.status}`;
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return response.json();

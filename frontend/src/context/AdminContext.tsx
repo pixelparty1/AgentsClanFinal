@@ -40,6 +40,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Store wallet address in localStorage for API calls
+    if (typeof window !== 'undefined' && address) {
+      localStorage.setItem('walletAddress', address);
+    } else if (typeof window !== 'undefined' && !isConnected) {
+      localStorage.removeItem('walletAddress');
+    }
+  }, [address, isConnected]);
+
+  useEffect(() => {
     // Wait for both wallet and Google session to settle
     const timer = setTimeout(() => {
       setIsLoading(false);

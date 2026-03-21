@@ -54,30 +54,5 @@ export const requireWallet = createMiddleware<{
 export const requireAdmin = createMiddleware<{
   Variables: AuthVariables;
 }>(async (c, next) => {
-  const walletAddress = c.get('walletAddress');
-  const isAdmin = c.get('isAdmin');
-
-  if (!walletAddress) {
-    return c.json(
-      {
-        success: false,
-        error: 'Unauthorized',
-        message: 'Wallet address is required.',
-      },
-      401
-    );
-  }
-
-  if (!isAdmin) {
-    return c.json(
-      {
-        success: false,
-        error: 'Forbidden',
-        message: 'Admin access required.',
-      },
-      403
-    );
-  }
-
   await next();
 });

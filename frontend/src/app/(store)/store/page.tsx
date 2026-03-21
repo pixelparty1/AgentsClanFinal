@@ -3,10 +3,44 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Truck, Gem, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import ProductCard from '@/components/store/ProductCard';
-import { products } from '@/lib/store-data';
+import type { Product } from '@/lib/store-data';
+import { productsApi } from '@/lib/api';
 
 export default function StoreHomePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await productsApi.list();
+        const dbProducts = response.data?.items || [];
+        const transformedProducts: Product[] = dbProducts.map((p: any) => ({
+          id: p.$id,
+          handle: p.handle,
+          title: p.name,
+          price: p.price,
+          images: p.image_url ? [p.image_url] : [],
+          category: p.category,
+          badge: undefined,
+          description: p.description || '',
+          details: [],
+          rating: 0,
+          reviews: 0,
+          inStock: p.stock !== false,
+        }));
+        setProducts(transformedProducts);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
   const featured = products.slice(0, 4);
   const newDrops = products.filter((p) => p.badge === 'New' || p.badge === 'Limited');
 
@@ -88,41 +122,6 @@ export default function StoreHomePage() {
       </section>
 
       {/* ═══ Lookbook / Promo Banner ═══ */}
-      <section className="px-6 md:px-12 lg:px-20 pb-20">
-        <div className="relative rounded-2xl overflow-hidden bg-[#111] border border-[#1a1a1a]">
-          <div className="relative z-10 flex flex-col md:flex-row items-center">
-            <div className="flex-1 p-10 md:p-16">
-              <span className="text-[#10B981] text-xs font-bold uppercase tracking-[0.2em]">
-                Limited Edition
-              </span>
-              <h3 className="text-white text-3xl md:text-5xl font-black uppercase mt-3 leading-tight">
-                THE FOUNDER&apos;S
-                <br />
-                <span className="text-transparent bg-clip-text bg-linear-to-r from-[#10B981] to-[#FF2D78]">
-                  COLLECTION
-                </span>
-              </h3>
-              <p className="text-[#888] text-sm mt-4 max-w-md leading-relaxed">
-                Exclusive pieces designed in collaboration with top AI founders. Only 200 units per style. Once they&apos;re gone, they&apos;re gone.
-              </p>
-              <Link
-                href="/store/collection"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#10B981] hover:bg-[#34D399] text-white font-bold text-sm uppercase tracking-wider rounded-lg mt-6 transition-all duration-200 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]"
-              >
-                EXPLORE <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="flex-1 p-6 md:p-10 flex items-center justify-center">
-              <img
-                src="/store/bg-merch.png"
-                alt="Agents Clan Merch"
-                className="w-full max-w-2xl h-auto object-contain rounded-xl"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ═══ Featured Drops ═══ */}
       {newDrops.length > 0 && (
         <section className="px-6 md:px-12 lg:px-20 pb-20">
