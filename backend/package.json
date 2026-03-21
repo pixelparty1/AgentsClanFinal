@@ -1,0 +1,32 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist",
+    "db:setup": "tsx scripts/setup-appwrite.ts"
+  },
+  "dependencies": {
+    "@agentsclan/shared": "workspace:*",
+    "@hono/node-server": "^1.14.0",
+    "@hono/zod-validator": "^0.7.6",
+    "dotenv": "^16.4.0",
+    "hono": "^4.6.0",
+    "node-appwrite": "^14.0.0",
+    "stripe": "^20.4.0",
+    "viem": "^2.21.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

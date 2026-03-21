@@ -1,0 +1,29 @@
+{
+  "name": "agentsclan",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AgentsClan Web3 Community Platform",
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "build": "pnpm run --parallel build",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:backend": "pnpm --filter backend build",
+    "start": "pnpm run --parallel start",
+    "start:frontend": "pnpm --filter frontend start",
+    "start:backend": "pnpm --filter backend start",
+    "lint": "pnpm run --parallel lint",
+    "typecheck": "pnpm run --parallel typecheck",
+    "clean": "pnpm run --parallel clean",
+    "db:setup": "pnpm --filter backend run db:setup"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
