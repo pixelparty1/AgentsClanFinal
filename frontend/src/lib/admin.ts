@@ -131,6 +131,7 @@ export interface QuestSubmission extends Models.Document {
   file_url: string | null;
   status: 'pending' | 'approved' | 'rejected';
   points_awarded: number;
+  points_submission: number | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   admin_notes: string | null;
@@ -365,8 +366,11 @@ export async function getMemberships(limit = 100): Promise<Membership[]> {
 
 // --- Quests ---
 export async function getQuests(): Promise<Quest[]> {
-  const response = await questsApi.list();
-  return response.data?.items || [];
+  const response = await questsApi.list({ limit: 200 });
+  if (!response.success) {
+    throw new Error((response as any).error || 'Failed to fetch quests');
+  }
+  return (response.data?.items || []) as Quest[];
 }
 
 export async function createQuest(data: CreateData<Quest>): Promise<Quest> {
@@ -388,11 +392,44 @@ export async function deleteQuest(id: string): Promise<void> {
 
 // --- Quest Submissions ---
 export async function getQuestSubmissions(status?: QuestSubmission['status']): Promise<QuestSubmission[]> {
-  const queries = [Query.orderDesc('$createdAt')];
-  if (status) queries.push(Query.equal('status', status));
-  
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, queries);
-  return result.documents as unknown as QuestSubmission[];
+  const response = await questsApi.getSubmissions({ status, limit: 200 });
+  if (!response.success) {
+    throw new Error((response as any).error || 'Failed to fetch submissions');
+  }
+
+  const normalized = (response.data?.items || []).map((doc: any) => {
+    const rawDescription = (doc.Description || '') as string;
+    const qidMatch = rawDescription.match(/\[\[QID:([^\]]+)\]\]/);
+    const statusMatch = rawDescription.match(/\[\[STATUS:([^\]]+)\]\]/);
+    const msgMatch = rawDescription.match(/\[\[MSG:([^\]]+)\]\]/);
+    const proofLink = doc.Instagram_URL || doc.Facebook_URL || doc.Twitter_URL || doc.Linkedin_URL || null;
+    const mappedStatus =
+      typeof doc.status === 'boolean'
+        ? (doc.status ? 'approved' : 'rejected')
+        : (statusMatch?.[1] || 'pending');
+    const cleanedDescription = rawDescription
+      .replace(/\[\[QID:[^\]]+\]\]/g, '')
+      .replace(/\[\[STATUS:[^\]]+\]\]/g, '')
+      .replace(/\[\[MSG:[^\]]+\]\]/g, '')
+      .trim();
+
+    return {
+      ...doc,
+      user_wallet: doc.username || 'unknown',
+      quest_id: doc.quest_id || qidMatch?.[1] || '',
+      proof_link: proofLink,
+      description: cleanedDescription || null,
+      file_url: null,
+      status: mappedStatus,
+      points_awarded: doc.points_awarded || 0,
+      points_submission: doc.points_submission || null,
+      reviewed_by: doc.reviewed_by || null,
+      reviewed_at: doc.reviewed_at || null,
+      admin_notes: doc.admin_notes || msgMatch?.[1] || null,
+    } as QuestSubmission;
+  });
+
+  return normalized;
 }
 
 export async function reviewQuestSubmission(
@@ -401,13 +438,14 @@ export async function reviewQuestSubmission(
   pointsAwarded: number,
   adminNotes?: string
 ): Promise<QuestSubmission> {
-  const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, id, {
+  const response = await questsApi.reviewSubmission(id, {
     status,
-    points_awarded: status === 'approved' ? pointsAwarded : 0,
-    admin_notes: adminNotes,
-    reviewed_at: new Date().toISOString(),
+    feedback: adminNotes,
   });
-  return doc as unknown as QuestSubmission;
+  if (!response.success) {
+    throw new Error((response as any).error || 'Failed to review submission');
+  }
+  return response.data as QuestSubmission;
 }
 
 // --- Job Applications ---

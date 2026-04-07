@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { account, databases } from '@/lib/appwrite';
+import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite';
+import { authApi } from '@/lib/api';
 import { OAuthProvider, Query } from 'appwrite';
 import SectionBadge from '@/components/ui/SectionBadge';
 import GradientHeading from '@/components/ui/GradientHeading';
@@ -58,8 +59,6 @@ const socialProviders = [
 ];
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
-const ADMIN_DATABASE_ID = '69a83b2f002fc2ab7386';
-const ADMIN_TABLE_ID = 'admin';
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 export default function SignUpPage() {
@@ -94,62 +93,56 @@ export default function SignUpPage() {
 
     try {
       if (loginRole === 'admin' && mode === 'signin') {
-        // ── Admin sign-in: verify against the Admin table directly via REST ──
-        const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
-        const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '69a7f212001b0a737d22';
+        // ── Admin sign-in: verify against the Admin table ──
+        try {
+          const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.ADMIN, [
+            Query.equal('Email', form.email.toLowerCase()),
+            Query.limit(1),
+          ]);
 
-        const url = `${endpoint}/databases/${ADMIN_DATABASE_ID}/collections/${ADMIN_TABLE_ID}/documents?queries[]=${encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'Email', values: [form.email] }))}`;
+          if (response.documents.length === 0) {
+            setError('This email is not registered as an admin.');
+            setLoading(false);
+            return;
+          }
 
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Appwrite-Project': projectId,
-          },
-        });
+          const adminDoc = response.documents[0] as any;
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => null);
-          console.error('Admin table query failed:', response.status, errData);
+          if (adminDoc.Password !== form.password) {
+            setError('Invalid admin password.');
+            setLoading(false);
+            return;
+          }
+
+          // Store admin info in sessionStorage
+          sessionStorage.setItem('adminSession', JSON.stringify({
+            id: adminDoc.$id,
+            email: adminDoc.Email,
+            role: adminDoc.role,
+            isActive: adminDoc.isActive,
+          }));
+
+          window.location.href = '/admin';
+        } catch (error: any) {
+          console.error('Admin login error:', error);
           setError('Unable to verify admin credentials. Check database permissions.');
           setLoading(false);
           return;
         }
-
-        const data = await response.json();
-
-        if (!data.documents || data.documents.length === 0) {
-          setError('This email is not registered as an admin.');
-          setLoading(false);
-          return;
-        }
-
-        const adminDoc = data.documents[0];
-
-        if (adminDoc.Password !== form.password) {
-          setError('Invalid admin password.');
-          setLoading(false);
-          return;
-        }
-
-        // Store admin info in sessionStorage so the admin dashboard can read it
-        sessionStorage.setItem('adminSession', JSON.stringify({
-          id: adminDoc.$id,
-          email: adminDoc.Email,
-          role: adminDoc.role,
-          isActive: adminDoc.isActive,
-        }));
-
-        window.location.href = '/admin';
       } else {
-        // ── Regular user sign-up / sign-in via Appwrite auth ──
-        // Delete any stale session before creating a new one
-        try { await account.deleteSession('current'); } catch { /* no active session — ok */ }
-
+        // ── Regular user sign-up / sign-in via backend auth ──
         if (mode === 'signup') {
+          // Call backend to register user in users table
+          await authApi.register(form.email, form.password);
+          
+          // Create Appwrite auth account
           await account.create('unique()', form.email, form.password, form.name);
           await account.createEmailPasswordSession(form.email, form.password);
         } else {
+          // Call backend to verify user and sign in
+          await authApi.login(form.email, form.password);
+          
+          // Create Appwrite email/password session
           await account.createEmailPasswordSession(form.email, form.password);
         }
         window.location.href = '/dashboard';

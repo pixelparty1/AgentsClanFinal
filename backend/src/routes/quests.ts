@@ -23,8 +23,12 @@ const questSchema = z.object({
 });
 
 const submitSchema = z.object({
-  proof_url: z.string().url().optional(),
-  proof_text: z.string().optional(),
+  instagram_url: z.string().url().optional(),
+  facebook_url: z.string().url().optional(),
+  twitter_url: z.string().url().optional(),
+  linkedin_url: z.string().url().optional(),
+  description: z.string().optional(),
+  email: z.string().email().optional(),
 });
 
 const reviewSchema = z.object({
@@ -56,6 +60,47 @@ app.get('/', async (c) => {
     });
   } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch quests' }, 500);
+  }
+});
+
+// GET /api/quests/my-submissions (current wallet)
+app.get('/my-submissions', requireWallet, async (c) => {
+  try {
+    const walletAddress = (c.get('walletAddress') || '').toLowerCase();
+    const limit = parseInt(c.req.query('limit') || '200');
+
+    const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUESTS_SUBMISSIONS, [
+      Query.orderDesc('$createdAt'),
+      Query.limit(limit),
+    ]);
+
+    const items = response.documents
+      .map((doc: any) => {
+        const rawDescription = (doc.Description || '') as string;
+        const walletMatch = rawDescription.match(/\[\[WALLET:([^\]]+)\]\]/i);
+        const qidMatch = rawDescription.match(/\[\[QID:([^\]]+)\]\]/i);
+        const statusMatch = rawDescription.match(/\[\[STATUS:([^\]]+)\]\]/i);
+        const msgMatch = rawDescription.match(/\[\[MSG:([^\]]+)\]\]/i);
+
+        return {
+          ...doc,
+          _wallet: (walletMatch?.[1] || '').toLowerCase(),
+          quest_id: qidMatch?.[1] || '',
+          status: statusMatch?.[1] || 'pending',
+          message: msgMatch?.[1] || null,
+        };
+      })
+      .filter((doc: any) => doc._wallet === walletAddress);
+
+    return c.json({
+      success: true,
+      data: {
+        items,
+        total: items.length,
+      },
+    });
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message || 'Failed to fetch submissions' }, 500);
   }
 });
 
@@ -132,7 +177,7 @@ app.post('/:id/submit', requireWallet, zValidator('json', submitSchema), async (
   try {
     const questId = c.req.param('id');
     const body = c.req.valid('json');
-    const walletAddress = c.get('walletAddress')!;
+    const walletAddress = (c.get('walletAddress') || '').toLowerCase();
 
     // Check if quest exists and is active
     const quest = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUESTS, questId);
@@ -140,29 +185,29 @@ app.post('/:id/submit', requireWallet, zValidator('json', submitSchema), async (
       return c.json({ success: false, error: 'Quest is not active' }, 400);
     }
 
-    // Check if user already submitted
-    const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, [
-      Query.equal('quest_id', questId),
-      Query.equal('user_wallet', walletAddress),
-      Query.limit(1),
-    ]);
+    const encodedDescription = [
+      `[[WALLET:${walletAddress}]]`,
+      `[[QID:${questId}]]`,
+      '[[STATUS:pending]]',
+      `[[MSG:submission pending review]]`,
+      body.email ? `[[EMAIL:${body.email}]]` : '',
+      body.description || '',
+    ].join(' ').trim();
 
-    if (existing.documents.length > 0) {
-      return c.json({ success: false, error: 'Already submitted' }, 400);
-    }
-
-    const submission = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, ID.unique(), {
-      quest_id: questId,
-      user_wallet: walletAddress,
-      proof_url: body.proof_url || null,
-      proof_text: body.proof_text || null,
-      status: 'pending',
-      xp_awarded: 0,
+    const submission = await databases.createDocument(DATABASE_ID, COLLECTIONS.QUESTS_SUBMISSIONS, ID.unique(), {
+      Instagram_URL: body.instagram_url || null,
+      Facebook_URL: body.facebook_url || null,
+      Twitter_URL: body.twitter_url || null,
+      Linkedin_URL: body.linkedin_url || null,
+      Description: encodedDescription || null,
+      status: null,
+      points_submission: (quest as any).points,
     });
 
     return c.json({ success: true, data: submission }, 201);
-  } catch (error) {
-    return c.json({ success: false, error: 'Failed to submit' }, 500);
+  } catch (error: any) {
+    console.error('Failed to submit quest proof:', error);
+    return c.json({ success: false, error: error?.message || 'Failed to submit' }, 500);
   }
 });
 
@@ -171,14 +216,20 @@ app.get('/admin/submissions', requireAdmin, async (c) => {
   try {
     const limit = parseInt(c.req.query('limit') || '25');
     const offset = parseInt(c.req.query('offset') || '0');
-    const status = c.req.query('status') || 'pending';
+    const status = c.req.query('status');
 
-    const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, [
-      Query.equal('status', status),
+    const queries: any[] = [
       Query.limit(limit),
       Query.offset(offset),
       Query.orderDesc('$createdAt'),
-    ]);
+    ];
+    if (status === 'approved') {
+      queries.push(Query.equal('status', true));
+    } else if (status === 'rejected') {
+      queries.push(Query.equal('status', false));
+    }
+
+    const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUESTS_SUBMISSIONS, queries);
 
     return c.json({
       success: true,
@@ -199,38 +250,69 @@ app.patch('/submissions/:id', requireAdmin, zValidator('json', reviewSchema), as
     const body = c.req.valid('json');
     const reviewerId = c.get('walletAddress');
 
-    const submission = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, id);
-    const quest = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUESTS, (submission as any).quest_id);
+    const submission = await databases.getDocument(DATABASE_ID, COLLECTIONS.QUESTS_SUBMISSIONS, id);
+    const currentDescription = ((submission as any).Description || '') as string;
+    const emailMatch = currentDescription.match(/\[\[EMAIL:([^\]]+)\]\]/);
+    const userEmail = emailMatch?.[1] || null;
 
-    let pointsAwarded = 0;
+    const plainDescription = currentDescription
+      .replace(/\[\[WALLET:[^\]]+\]\]/g, '')
+      .replace(/\[\[QID:[^\]]+\]\]/g, '')
+      .replace(/\[\[STATUS:[^\]]+\]\]/g, '')
+      .replace(/\[\[MSG:[^\]]+\]\]/g, '')
+      .replace(/\[\[EMAIL:[^\]]+\]\]/g, '')
+      .trim();
 
-    if (body.status === 'approved') {
-      pointsAwarded = (quest as any).points;
+    const userMessage =
+      body.status === 'approved'
+        ? 'quests approved points have been rewarded'
+        : 'quests rejected please verify and submit again';
 
-      // Update user points (if user record exists)
+    const walletMatch = currentDescription.match(/\[\[WALLET:([^\]]+)\]\]/);
+    const walletToken = walletMatch ? `[[WALLET:${walletMatch[1]}]]` : '';
+    const questIdMatch = currentDescription.match(/\[\[QID:([^\]]+)\]\]/);
+    const qidToken = questIdMatch ? `[[QID:${questIdMatch[1]}]]` : '';
+    const emailToken = userEmail ? `[[EMAIL:${userEmail}]]` : '';
+    const encodedDescription = [
+      walletToken,
+      qidToken,
+      `[[STATUS:${body.status}]]`,
+      `[[MSG:${userMessage}]]`,
+      emailToken,
+      plainDescription,
+    ].join(' ').trim();
+
+    const updated = await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUESTS_SUBMISSIONS, id, {
+      Description: encodedDescription,
+      status: body.status === 'approved',
+    });
+
+    // If approved, update user points in users table
+    if (body.status === 'approved' && userEmail) {
       try {
-        const users = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS, [
-          Query.equal('wallet_address', (submission as any).user_wallet),
+        const pointsToAdd = (submission as any).points_submission || 0;
+
+        // Find user by email
+        const userResult = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS_TABLE, [
+          Query.equal('email', userEmail),
           Query.limit(1),
         ]);
-        if (users.documents.length > 0) {
-          const user = users.documents[0] as any;
-          await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, {
-            total_points: (user.total_points || 0) + pointsAwarded,
+
+        if (userResult.documents.length > 0) {
+          const user = userResult.documents[0] as any;
+          const currentPoints = user.points || 0;
+          const newPoints = currentPoints + pointsToAdd;
+
+          // Update user points
+          await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS_TABLE, user.$id, {
+            points: newPoints,
           });
         }
-      } catch (e) {
-        // User might not exist
+      } catch (pointsError: any) {
+        console.error('Failed to update user points:', pointsError);
+        // Don't fail the request if points update fails
       }
     }
-
-    const updated = await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUEST_SUBMISSIONS, id, {
-      status: body.status,
-      review_notes: body.review_notes || null,
-      reviewer_id: reviewerId,
-      reviewed_at: new Date().toISOString(),
-      points_awarded: pointsAwarded,
-    });
 
     return c.json({ success: true, data: updated });
   } catch (error) {

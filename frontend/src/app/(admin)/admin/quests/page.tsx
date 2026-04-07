@@ -7,6 +7,7 @@ import GradientHeading from '@/components/ui/GradientHeading';
 import { GlowCard } from '@/components/ui/glow-card';
 import { 
   getQuests, 
+  getQuestSubmissions,
   createQuest, 
   updateQuest, 
   deleteQuest,
@@ -38,8 +39,12 @@ export default function QuestsAdmin() {
 
   async function fetchData() {
     try {
-      const questsData = await getQuests();
+      const [questsData, submissionsData] = await Promise.all([
+        getQuests(),
+        getQuestSubmissions(),
+      ]);
       setQuests(questsData);
+      setSubmissions(submissionsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -297,9 +302,9 @@ export default function QuestsAdmin() {
           <table className="w-full">
             <thead className="bg-emerald-950/40">
               <tr>
-                <th className="px-6 py-4 text-left text-sm text-gray-400 font-medium">User</th>
                 <th className="px-6 py-4 text-left text-sm text-gray-400 font-medium">Quest</th>
                 <th className="px-6 py-4 text-left text-sm text-gray-400 font-medium">Proof</th>
+                <th className="px-6 py-4 text-left text-sm text-gray-400 font-medium">Points</th>
                 <th className="px-6 py-4 text-left text-sm text-gray-400 font-medium">Status</th>
                 <th className="px-6 py-4 text-left text-sm text-gray-400 font-medium">Date</th>
                 <th className="px-6 py-4 text-right text-sm text-gray-400 font-medium">Actions</th>
@@ -308,20 +313,12 @@ export default function QuestsAdmin() {
             <tbody className="divide-y divide-emerald-900/20">
               {submissions
                 .filter(s => 
-                  s.user_wallet?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   s.quest_id?.toLowerCase().includes(searchQuery.toLowerCase())
                 )
                 .map((submission) => {
                 const quest = quests.find(q => q.$id === submission.quest_id);
                 return (
                   <tr key={submission.$id} className="hover:bg-emerald-950/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="text-xs text-gray-500 font-mono">
-                          {submission.user_wallet?.slice(0, 6)}...{submission.user_wallet?.slice(-4)}
-                        </p>
-                      </div>
-                    </td>
                     <td className="px-6 py-4 text-sm">{quest?.title || 'Unknown Quest'}</td>
                     <td className="px-6 py-4">
                       {(submission.proof_link || submission.file_url) && (
@@ -334,6 +331,15 @@ export default function QuestsAdmin() {
                           <Download className="w-4 h-4" />
                           View Proof
                         </a>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {submission.points_submission ? (
+                        <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
+                          {submission.points_submission} XP
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">

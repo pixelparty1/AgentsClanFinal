@@ -5,6 +5,7 @@ import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 import { timing } from 'hono/timing';
 
+import { authRoutes } from './routes/auth';
 import { checkoutRoutes } from './routes/checkout';
 import { webhookRoutes } from './routes/webhook';
 import { mintRoutes } from './routes/mint';
@@ -121,6 +122,7 @@ app.get('/docs', (c) => {
 });
 
 // Mount routes
+app.route('/api/auth', authRoutes);
 app.route('/api/checkout', checkoutRoutes);
 app.route('/api/webhook', webhookRoutes);
 app.route('/api/mint', mintRoutes);

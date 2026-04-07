@@ -1,57 +1,120 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Link2, Loader2 } from 'lucide-react';
+import { Loader2, Instagram, Facebook, Twitter, Linkedin } from 'lucide-react';
 
 interface ProofSubmissionFormProps {
   onSubmit: (data: { proofLink: string; description: string; fileUrl?: string }) => Promise<void>;
   disabled?: boolean;
 }
 
+type Platform = 'instagram' | 'facebook' | 'twitter' | 'linkedin';
+
+const PLATFORMS: { id: Platform; label: string; icon: React.ReactNode }[] = [
+  { id: 'instagram', label: 'Instagram', icon: <Instagram size={16} /> },
+  { id: 'facebook', label: 'Facebook', icon: <Facebook size={16} /> },
+  { id: 'twitter', label: 'Twitter', icon: <Twitter size={16} /> },
+  { id: 'linkedin', label: 'LinkedIn', icon: <Linkedin size={16} /> },
+];
+
 export default function ProofSubmissionForm({ onSubmit, disabled }: ProofSubmissionFormProps) {
-  const [proofLink, setProofLink] = useState('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
+  const [platformUrls, setPlatformUrls] = useState<Record<Platform, string>>({
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    linkedin: '',
+  });
   const [description, setDescription] = useState('');
-  const [fileName, setFileName] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!proofLink.trim()) return;
+    if (selectedPlatforms.length === 0) return;
+    
+    // Check if all selected platforms have URLs
+    const allUrlsFilled = selectedPlatforms.every((platform) => platformUrls[platform]?.trim());
+    if (!allUrlsFilled) return;
+
     setSubmitting(true);
     try {
-      await onSubmit({ proofLink: proofLink.trim(), description: description.trim(), fileUrl: undefined });
+      const proofLink = selectedPlatforms
+        .map((platform) => `${platform}:${platformUrls[platform].trim()}`)
+        .join('|');
+      await onSubmit({ proofLink, description: description.trim(), fileUrl: undefined });
     } finally {
       setSubmitting(false);
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) setFileName(file.name);
+  function handlePlatformChange(platform: Platform) {
+    setSelectedPlatforms((prev) =>
+      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
+    );
+  }
+
+  function handleUrlChange(platform: Platform, url: string) {
+    setPlatformUrls((prev) => ({
+      ...prev,
+      [platform]: url,
+    }));
   }
 
   const isDisabled = disabled || submitting;
+  const allSelectedUrlsFilled = selectedPlatforms.every((platform) => platformUrls[platform]?.trim());
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* Proof link */}
+      {/* Platform selection */}
       <div className="flex flex-col gap-1.5">
         <label className="text-white/50 text-xs font-medium uppercase tracking-wider">
-          Proof Link <span className="text-white/30">(GitHub / Notion / Social)</span>
+          Where will you post?
         </label>
-        <div className="relative">
-          <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-          <input
-            type="url"
-            placeholder="https://github.com/..."
-            value={proofLink}
-            onChange={(e) => setProofLink(e.target.value)}
-            required
-            disabled={isDisabled}
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[#00FF66]/40 transition-colors disabled:opacity-40"
-          />
+        <div className="grid grid-cols-2 gap-2">
+          {PLATFORMS.map((platform) => (
+            <button
+              key={platform.id}
+              type="button"
+              onClick={() => handlePlatformChange(platform.id)}
+              disabled={isDisabled}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${
+                selectedPlatforms.includes(platform.id)
+                  ? 'bg-[#00FF66]/15 border-[#00FF66]/40 text-[#00FF66]'
+                  : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
+              } ${isDisabled ? 'opacity-40 pointer-events-none' : ''}`}
+            >
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                {platform.icon}
+                {platform.label}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* Social URLs */}
+      {selectedPlatforms.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {selectedPlatforms.map((platform) => {
+            const platformLabel = PLATFORMS.find((p) => p.id === platform)?.label || platform;
+            return (
+              <div key={platform} className="flex flex-col gap-1.5">
+                <label className="text-white/50 text-xs font-medium uppercase tracking-wider">
+                  Submit {platformLabel} URL
+                </label>
+                <input
+                  type="url"
+                  placeholder={`https://${platform}.com/...`}
+                  value={platformUrls[platform]}
+                  onChange={(e) => handleUrlChange(platform, e.target.value)}
+                  disabled={isDisabled}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-[#00FF66]/40 transition-colors disabled:opacity-40"
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Description */}
       <div className="flex flex-col gap-1.5">
@@ -68,24 +131,10 @@ export default function ProofSubmissionForm({ onSubmit, disabled }: ProofSubmiss
         />
       </div>
 
-      {/* File upload */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-white/50 text-xs font-medium uppercase tracking-wider">
-          Screenshot <span className="text-white/30">(optional)</span>
-        </label>
-        <label
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-white/15 bg-white/5 cursor-pointer hover:border-white/25 transition-colors ${isDisabled ? 'opacity-40 pointer-events-none' : ''}`}
-        >
-          <Upload size={14} className="text-white/40" />
-          <span className="text-sm text-white/40">{fileName ?? 'Choose file…'}</span>
-          <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={isDisabled} />
-        </label>
-      </div>
-
       {/* Submit */}
       <button
         type="submit"
-        disabled={isDisabled || !proofLink.trim()}
+        disabled={isDisabled || selectedPlatforms.length === 0 || !allSelectedUrlsFilled}
         className="group relative w-full mt-1"
       >
         <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#00ff88] to-[#00cc66] opacity-40 blur-md group-hover:opacity-70 transition-opacity duration-300" />

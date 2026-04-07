@@ -105,7 +105,7 @@ export default function QuestModal({ quest, status, submission, onClose, onSubmi
               <p className="text-white/65 text-[15px] leading-relaxed">{quest.description}</p>
 
               {/* Meta grid */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5">
                   <Target size={14} className="text-[#00FF66]" />
                   <span className="text-white text-sm font-semibold">{quest.points} pts</span>
@@ -115,11 +115,6 @@ export default function QuestModal({ quest, status, submission, onClose, onSubmi
                   <Clock size={14} className="text-[#00FF66]" />
                   <span className="text-white text-sm font-semibold">{quest.time}</span>
                   <span className="text-white/40 text-[10px]">Est. Time</span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5">
-                  <Zap size={14} className="text-[#00FF66]" />
-                  <span className="text-white text-sm font-semibold">{quest.type}</span>
-                  <span className="text-white/40 text-[10px]">Category</span>
                 </div>
               </div>
 

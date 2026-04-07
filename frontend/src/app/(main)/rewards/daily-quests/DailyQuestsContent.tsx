@@ -3,12 +3,15 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
+import { useAccount } from 'wagmi';
+import { Query } from 'appwrite';
 import SectionBadge from '@/components/ui/SectionBadge';
 import GradientHeading from '@/components/ui/GradientHeading';
 import QuestCard from '@/components/quests/QuestCard';
 import QuestModal from '@/components/quests/QuestModal';
 import QuestProgressBar from '@/components/quests/QuestProgressBar';
-import { questsApi } from '@/lib/api';
+import { questsApi, authApi } from '@/lib/api';
+import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite';
 import {
   submitQuestProof,
   fetchTodaySubmissions,
@@ -22,36 +25,78 @@ import {
 const TEMP_USER_ID = 'demo-user-001';
 
 export default function DailyQuestsContent() {
+  const { address } = useAccount();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [submissions, setSubmissions] = useState<QuestSubmission[]>([]);
   const [streak, setStreak] = useState(0);
+  const [userPoints, setUserPoints] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (address) {
+      localStorage.setItem('walletAddress', address);
+    }
+  }, [address]);
 
   // Load quests from API and today's submissions & streak on mount
   useEffect(() => {
     (async () => {
       try {
+        // Get current user from Appwrite to fetch points
+        const { account } = await import('@/lib/appwrite');
+        try {
+          const user = await account.get();
+          // Fetch user points from backend
+          const pointsResponse = await authApi.getPoints(user.email);
+          if (pointsResponse.success) {
+            setUserPoints(pointsResponse.data.points);
+          }
+        } catch (e) {
+          console.warn('Could not fetch user points:', e);
+        }
+
         // Fetch quests from backend API
         const questsResponse = await questsApi.list();
         const activeQuests = (questsResponse.data?.items || []).filter((q: any) => q.active !== false);
-        
+
         // Transform API quests to Quest interface
         const transformedQuests: Quest[] = activeQuests.map((q: any) => ({
           id: q.$id,
           title: q.title,
           description: q.description,
           points: q.points,
-          type: q.type || 'Builder', // Default type if not provided
-          time: q.time || 'Variable', // Default time if not provided
+          type: q.type || 'Builder',
+          time: q.time || 'Variable',
         }));
-        
+
         setQuests(transformedQuests);
       } catch (error) {
-        console.error('Failed to fetch quests:', error);
-        toast.error('Failed to load quests', {
-          style: { background: '#111', color: '#ff6b6b', border: '1px solid rgba(255,100,100,0.25)' },
-        });
+        try {
+          // Fallback: read quests directly from Appwrite so existing quests still appear.
+          const direct = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUESTS, [
+            Query.equal('active', true),
+            Query.orderDesc('$createdAt'),
+            Query.limit(100),
+          ]);
+
+          const transformedQuests: Quest[] = direct.documents.map((q: any) => ({
+            id: q.$id,
+            title: q.title,
+            description: q.description,
+            points: q.points,
+            type: q.type || 'Builder',
+            time: q.time || 'Variable',
+          }));
+
+          setQuests(transformedQuests);
+        } catch (fallbackError) {
+          console.error('Failed to fetch quests:', fallbackError);
+          toast.error('Failed to load quests', {
+            style: { background: '#111', color: '#ff6b6b', border: '1px solid rgba(255,100,100,0.25)' },
+          });
+        }
       }
 
       try {
@@ -68,6 +113,24 @@ export default function DailyQuestsContent() {
         setLoading(false);
       }
     })();
+  }, []);
+
+  // Periodically refresh user points (every 30 seconds to check for admin approvals)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const { account } = await import('@/lib/appwrite');
+        const user = await account.get();
+        const pointsResponse = await authApi.getPoints(user.email);
+        if (pointsResponse.success) {
+          setUserPoints(pointsResponse.data.points);
+        }
+      } catch (e) {
+        // Silent fail - just continue polling
+      }
+    }, 30000); // Every 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   /** Map quest id → latest submission */
@@ -154,8 +217,24 @@ export default function DailyQuestsContent() {
       </section>
 
       {/* Progress + Streak */}
-      <section className="px-6 md:px-[120px] pb-6">
-        <QuestProgressBar earnedPoints={earnedPoints} maxPoints={maxDailyPoints} streak={streak} />
+      <section className="px-6 md:px-[120px] pb-6 space-y-4">
+        {/* Total Points Display */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="relative bg-white/5 border border-white/10 rounded-2xl p-5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-white/60 text-xs uppercase tracking-wider font-medium">Total Points</span>
+              <span className="text-white text-2xl font-semibold mt-1">{userPoints}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-white/60 text-xs">All-time</span>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* Quest grid */}

@@ -3,6 +3,7 @@
    ────────────────────────────────────────────────────────── */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { questsApi } from './api';
 
 /* ── Types ───────────────────────────────────────────────── */
 
@@ -40,6 +41,8 @@ export interface StreakInfo {
   lastCompletedAt: string | null;
 }
 
+type Platform = 'instagram' | 'facebook' | 'twitter' | 'linkedin';
+
 /* ── Quest catalogue ─────────────────────────────────────── */
 
 export const QUESTS: Quest[] = [];
@@ -69,21 +72,28 @@ function safeClient(): SupabaseClient | null {
 /** Fetch all submissions for a user (today only).
  *  Returns [] if Supabase is not configured. */
 export async function fetchTodaySubmissions(userId: string): Promise<QuestSubmission[]> {
-  const client = safeClient();
-  if (!client) return [];
-
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const { data, error } = await client
-    .from('quest_submissions')
-    .select('*')
-    .eq('user_id', userId)
-    .gte('created_at', todayStart.toISOString())
-    .order('created_at', { ascending: false });
-
-  if (error) { console.error('fetchTodaySubmissions:', error); return []; }
-  return (data as QuestSubmission[]) ?? [];
+  try {
+    const response = await questsApi.getMySubmissions({ limit: 200 });
+    const items = response.items || [];
+    return items
+      .filter((doc: any) => new Date(doc.$createdAt || doc.created_at).getTime() >= todayStart.getTime())
+      .map((doc: any) => ({
+        id: doc.$id || doc.id,
+        user_id: userId,
+        quest_id: doc.quest_id || '',
+        proof_link: doc.Instagram_URL || doc.Facebook_URL || doc.Twitter_URL || doc.Linkedin_URL || '',
+        description: (doc.Description || '').replace(/\[\[[^\]]+\]\]/g, '').trim(),
+        file_url: null,
+        status: typeof doc.status === 'boolean' ? (doc.status ? 'approved' : 'pending') : (doc.status === 'approved' ? 'approved' : 'pending'),
+        created_at: doc.$createdAt || doc.created_at || new Date().toISOString(),
+      })) as QuestSubmission[];
+  } catch (error) {
+    console.error('fetchTodaySubmissions:', error);
+    return [];
+  }
 }
 
 /** Submit proof for a quest.
@@ -101,37 +111,64 @@ export async function submitQuestProof({
   description: string;
   fileUrl?: string;
 }): Promise<QuestSubmission | null> {
-  const client = safeClient();
-  if (!client) {
-    console.warn('Supabase not configured — simulating submission');
-    // Return a fake row so the UI still works in dev
-    return {
-      id: crypto.randomUUID(),
-      user_id: userId,
-      quest_id: questId,
-      proof_link: proofLink,
-      description,
-      file_url: fileUrl ?? null,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    };
+  const platformUrls: Record<Platform, string | null> = {
+    instagram: null,
+    facebook: null,
+    twitter: null,
+    linkedin: null,
+  };
+
+  for (const segment of proofLink.split('|')) {
+    const [rawPlatform, ...rest] = segment.split(':');
+    const platform = rawPlatform?.trim().toLowerCase() as Platform;
+    const url = rest.join(':').trim();
+
+    if (platform in platformUrls && url) {
+      platformUrls[platform] = url;
+    }
   }
 
-  const { data, error } = await client
-    .from('quest_submissions')
-    .insert([{
+  try {
+    // Get current user's email from Appwrite
+    let userEmail: string | undefined;
+    try {
+      const { account } = await import('./appwrite');
+      const user = await account.get();
+      userEmail = user.email;
+    } catch (e) {
+      console.warn('Could not get user email:', e);
+    }
+
+    const response = await questsApi.submit(questId, {
+      instagramUrl: platformUrls.instagram || undefined,
+      facebookUrl: platformUrls.facebook || undefined,
+      twitterUrl: platformUrls.twitter || undefined,
+      linkedinUrl: platformUrls.linkedin || undefined,
+      description: description || undefined,
+      email: userEmail,
+    });
+
+    if (!response.success) {
+      console.error('submitQuestProof:', response.error);
+      return null;
+    }
+
+    const doc = response.data as any;
+
+    return {
+      id: doc?.$id || crypto.randomUUID(),
       user_id: userId,
       quest_id: questId,
       proof_link: proofLink,
       description,
       file_url: fileUrl ?? null,
       status: 'pending',
-    }])
-    .select()
-    .single();
-
-  if (error) { console.error('submitQuestProof:', error); return null; }
-  return data as QuestSubmission;
+      created_at: doc?.$createdAt || new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('submitQuestProof:', error);
+    return null;
+  }
 }
 
 /* ── Streak ──────────────────────────────────────────────── */

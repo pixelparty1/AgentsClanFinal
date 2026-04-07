@@ -23,7 +23,9 @@ export const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || 'agentsclan_db';
 
 // Collection IDs
 export const COLLECTIONS = {
-  USERS: 'users',
+  USERS: 'auth',
+  USERS_TABLE: 'users',
+  ADMIN: 'admin',
   POSTS: 'posts',
   EVENTS: 'events',
   PRODUCTS: 'products',
@@ -32,6 +34,7 @@ export const COLLECTIONS = {
   MEMBERSHIPS: 'memberships',
   QUESTS: 'quests',
   QUEST_SUBMISSIONS: 'quest_submissions',
+  QUESTS_SUBMISSIONS: 'quests_submissions',
   JOB_APPLICATIONS: 'job_applications',
   ANNOUNCEMENTS: 'announcements',
   ANALYTICS: 'analytics_daily',

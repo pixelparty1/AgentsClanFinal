@@ -44,7 +44,41 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/a
 // Get wallet address from storage or wagmi context
 function getWalletAddress(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('walletAddress');
+
+  const isAddress = (value: unknown): value is string =>
+    typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
+
+  const fromLocalStorage = localStorage.getItem('walletAddress');
+  if (isAddress(fromLocalStorage)) return fromLocalStorage;
+
+  // Fallback: wagmi persisted state can contain the active address.
+  try {
+    const wagmiStore = localStorage.getItem('wagmi.store');
+    if (wagmiStore) {
+      const parsed = JSON.parse(wagmiStore) as { state?: { connections?: Map<unknown, { accounts?: string[] }> | Record<string, { accounts?: string[] }> } };
+      const connections = parsed?.state?.connections;
+
+      if (connections instanceof Map) {
+        for (const [, value] of connections.entries()) {
+          const candidate = value?.accounts?.[0];
+          if (isAddress(candidate)) return candidate;
+        }
+      } else if (connections && typeof connections === 'object') {
+        for (const value of Object.values(connections)) {
+          const candidate = value?.accounts?.[0];
+          if (isAddress(candidate)) return candidate;
+        }
+      }
+    }
+  } catch {
+    // Ignore parse/storage errors and continue to provider fallback.
+  }
+
+  // Fallback: injected provider selected account.
+  const providerAddress = (window as Window & { ethereum?: { selectedAddress?: string } }).ethereum?.selectedAddress;
+  if (isAddress(providerAddress)) return providerAddress;
+
+  return null;
 }
 
 // Generic fetch wrapper with error handling
@@ -87,6 +121,36 @@ async function apiFetch<T>(
 
   return response.json();
 }
+
+// ============================================================================
+// AUTH API
+// ============================================================================
+
+export const authApi = {
+  register: async (email: string, password: string) => {
+    return apiFetch<{ success: boolean; data: { id: string; email: string; points: number } }>(
+      '/auth/register',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }
+    );
+  },
+  login: async (email: string, password: string) => {
+    return apiFetch<{ success: boolean; data: { id: string; email: string; points: number } }>(
+      '/auth/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }
+    );
+  },
+  getPoints: async (email: string) => {
+    return apiFetch<{ success: boolean; data: { email: string; points: number } }>(
+      `/auth/points/${encodeURIComponent(email)}`
+    );
+  },
+};
 
 // ============================================================================
 // CHECKOUT API
@@ -293,11 +357,25 @@ export const questsApi = {
 
   submit: (
     questId: string, 
-    data: { proofUrl: string; notes?: string }
+    data: {
+      instagramUrl?: string;
+      facebookUrl?: string;
+      twitterUrl?: string;
+      linkedinUrl?: string;
+      description?: string;
+      email?: string;
+    }
   ): Promise<ApiResponse<QuestSubmission>> =>
     apiFetch(`/quests/${questId}/submit`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        instagram_url: data.instagramUrl,
+        facebook_url: data.facebookUrl,
+        twitter_url: data.twitterUrl,
+        linkedin_url: data.linkedinUrl,
+        description: data.description,
+        email: data.email,
+      }),
     }),
 
   getSubmissions: (params?: { 
@@ -313,13 +391,23 @@ export const questsApi = {
     return apiFetch(`/quests/admin/submissions${query ? `?${query}` : ''}`);
   },
 
+  getMySubmissions: (params?: { limit?: number }): Promise<PaginatedResponse<QuestSubmission>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    const query = searchParams.toString();
+    return apiFetch(`/quests/my-submissions${query ? `?${query}` : ''}`);
+  },
+
   reviewSubmission: (
     submissionId: string, 
     data: { status: 'approved' | 'rejected'; feedback?: string }
   ): Promise<ApiResponse<QuestSubmission>> =>
     apiFetch(`/quests/submissions/${submissionId}`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        status: data.status,
+        review_notes: data.feedback,
+      }),
     }),
 };
 
