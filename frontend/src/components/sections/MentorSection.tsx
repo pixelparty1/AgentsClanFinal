@@ -7,18 +7,18 @@ import { GlowingEffect } from '@/components/ui/glowing-effect';
 const mentors = [
   {
     id: 0,
-    name: 'Alex Rivera',
-    role: 'DeFi Protocol Architect',
-    bio: 'Former lead engineer at top DEXs. Designs secure tokenomics and scalable smart contract architectures.',
-    image: '/mentors/1.jpeg',
-    link: 'https://thelastknown.xyz',
-  },
-  {
-    id: 1,
     name: 'Fardeen Khan',
     role: 'AI x Blockchain Researcher',
     bio: 'Complexity Scientist',
+    image: '/mentors/1.jpeg',
+  },
+  {
+    id: 1,
+    name: 'Alex Rivera',
+    role: 'DeFi Protocol Architect',
+    bio: 'Former lead engineer at top DEXs. Designs secure tokenomics and scalable smart contract architectures.',
     image: '/mentors/2.jpeg',
+    link: 'https://thelastknown.xyz',
   },
   {
     id: 2,
