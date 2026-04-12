@@ -386,8 +386,10 @@ export async function updateQuest(id: string, data: CreateData<Quest>): Promise<
 }
 
 export async function deleteQuest(id: string): Promise<void> {
-  const response = await fetch(`/api/quests/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Failed to delete quest');
+  const response = await questsApi.delete(id);
+  if (!response.success) {
+    throw new Error(response.error as string || 'Failed to delete quest');
+  }
 }
 
 // --- Quest Submissions ---

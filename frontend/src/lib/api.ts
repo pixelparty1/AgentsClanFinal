@@ -39,7 +39,7 @@ interface NFTCheckResponse {
 }
 
 // API base URL - configurable via environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Get wallet address from storage or wagmi context
 function getWalletAddress(): string | null {
@@ -102,19 +102,34 @@ async function apiFetch<T>(
     (headers as Record<string, string>)['X-Wallet-Address'] = walletAddress;
   }
 
-  // Build an absolute URL — required by fetch in all environments
-  const base =
-    API_BASE_URL ||
-    (typeof window !== 'undefined'
-      ? `${window.location.origin}/api`
-      : 'http://localhost:3001/api');
+  // Normalize base and endpoint to prevent double slashes or missing slashes
+  const baseUrl = API_BASE_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:3001/api');
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-  const url = base.startsWith('http') ? `${base}${endpoint}` : `${window.location.origin}${base}${endpoint}`;
+  // Build the final absolute URL
+  const url = cleanBase.startsWith('http') 
+    ? `${cleanBase}${cleanEndpoint}` 
+    : (typeof window !== 'undefined' 
+        ? `${window.location.origin}${cleanBase}${cleanEndpoint}`
+        : `http://localhost:3001${cleanBase}${cleanEndpoint}`);
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    console.error(`API Fetch Error [${url}]:`, err);
+    // Provide a more helpful error message for common network failures
+    const isNetworkError = err instanceof Error && (err.name === 'TypeError' || err.message.includes('fetch'));
+    throw new Error(
+      isNetworkError 
+        ? `Connection Failed: Could not reach the API at ${url}. Please verify the backend is running and allow CORS if necessary.` 
+        : `Network Error: ${err instanceof Error ? err.message : 'Unknown network failure'}`
+    );
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -127,7 +142,7 @@ async function apiFetch<T>(
     } else if (error.details && typeof error.details === 'string') {
       errorMessage = error.details;
     } else {
-      errorMessage = `HTTP ${response.status}`;
+      errorMessage = `HTTP ${response.status}: ${response.statusText || 'Error'}`;
     }
     
     throw new Error(errorMessage);
@@ -367,6 +382,11 @@ export const questsApi = {
     apiFetch(`/quests/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  delete: (id: string): Promise<ApiResponse<void>> =>
+    apiFetch(`/quests/${id}`, {
+      method: 'DELETE',
     }),
 
   submit: (
