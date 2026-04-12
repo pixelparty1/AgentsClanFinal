@@ -10,21 +10,28 @@ const mentors = [
     name: 'Alex Rivera',
     role: 'DeFi Protocol Architect',
     bio: 'Former lead engineer at top DEXs. Designs secure tokenomics and scalable smart contract architectures.',
-    image: '/mentors/mentor0.jpg',
+    image: '/mentors/1.jpeg',
   },
   {
     id: 1,
     name: 'Sarah Chen',
     role: 'AI Autonomous Agents Lead',
     bio: 'Pioneer bridging on-chain identity with LLMs. Mentors founders on AI-powered decentralized apps.',
-    image: '/mentors/mentor1.png',
+    image: '/mentors/2.jpeg',
   },
   {
     id: 2,
     name: 'Marcus Vance',
     role: 'Web3 Growth & Community',
     bio: 'Scaled multiple DAOs to 100k+ members. Specializes in viral growth loops and community design.',
-    image: '/mentors/mentor2.jpg',
+    image: '/mentors/3.jpeg',
+  },
+  {
+    id: 3,
+    name: 'Alex Rivera',
+    role: 'DeFi Protocol Architect',
+    bio: 'Former lead engineer at top DEXs. Designs secure tokenomics and scalable smart contract architectures.',
+    image: '/mentors/4.jpeg',
   },
 ];
 
@@ -68,8 +75,6 @@ function MentorCard({ mentor }: { mentor: (typeof mentors)[number] }) {
 }
 
 const MentorSection = () => {
-  const allCards = [...mentors, ...mentors, ...mentors, ...mentors];
-
   return (
     <section className="relative w-full bg-gradient-to-b from-[#0b1a13] via-emerald-950/15 to-[#0b1a13] py-14 md:py-20 overflow-hidden">
 
@@ -94,15 +99,10 @@ const MentorSection = () => {
         </p>
       </motion.div>
 
-      {/* Marquee — left to right */}
-      <div className="relative z-10 mentor-marquee">
-        {/* Edge fades */}
-        <div className="absolute left-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-r from-[#0b1a13] to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-[#0b1a13] to-transparent z-10 pointer-events-none" />
-
-        <div className="mentor-marquee-track mentor-marquee--ltr flex gap-4 md:gap-5">
-          {allCards.map((mentor, i) => (
-            <MentorCard key={`m-${mentor.id}-${i}`} mentor={mentor} />
+      <div className="relative z-10 px-6">
+        <div className="mx-auto flex flex-wrap justify-center gap-4 md:gap-5 max-w-6xl">
+          {mentors.map((mentor) => (
+            <MentorCard key={`m-${mentor.id}`} mentor={mentor} />
           ))}
         </div>
       </div>
