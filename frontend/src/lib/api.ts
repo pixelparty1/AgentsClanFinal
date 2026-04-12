@@ -103,16 +103,21 @@ async function apiFetch<T>(
   }
 
   // Normalize base and endpoint to prevent double slashes or missing slashes
-  const baseUrl = API_BASE_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:3001/api');
+  const baseUrl = API_BASE_URL || (typeof window !== 'undefined' 
+    ? (window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api')
+    : 'http://localhost:3001/api');
+    
   const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
   // Build the final absolute URL
   const url = cleanBase.startsWith('http') 
     ? `${cleanBase}${cleanEndpoint}` 
-    : (typeof window !== 'undefined' 
-        ? `${window.location.origin}${cleanBase}${cleanEndpoint}`
-        : `http://localhost:3001${cleanBase}${cleanEndpoint}`);
+    : `${window.location.origin}${cleanBase}${cleanEndpoint}`;
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[API] Fetching: ${url}`);
+  }
 
   let response: Response;
   try {
@@ -121,12 +126,12 @@ async function apiFetch<T>(
       headers,
     });
   } catch (err) {
-    console.error(`API Fetch Error [${url}]:`, err);
+    console.error(`[API] Connection Error: ${url}`, err);
     // Provide a more helpful error message for common network failures
     const isNetworkError = err instanceof Error && (err.name === 'TypeError' || err.message.includes('fetch'));
     throw new Error(
       isNetworkError 
-        ? `Connection Failed: Could not reach the API at ${url}. Please verify the backend is running and allow CORS if necessary.` 
+        ? `Failed to Connect: The API at ${url} is unreachable. Ensure the backend server is running on port 3001 and CORS is enabled.` 
         : `Network Error: ${err instanceof Error ? err.message : 'Unknown network failure'}`
     );
   }
