@@ -7,6 +7,7 @@
 :root {
   --accent: oklch(0.97 0 0);
   --accent-dark: #00cc66;
+  --accent-lime: #D8FF3F;
   --dark-base: #0b1a13;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -98,6 +99,13 @@ body {
 }
 .green-text-glow {
   text-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+}
+/* Lime accent utilities */
+.lime-glow {
+  box-shadow: 0 0 20px rgba(216, 255, 63, 0.25), 0 0 60px rgba(216, 255, 63, 0.08);
+}
+.lime-text-glow {
+  text-shadow: 0 0 24px rgba(216, 255, 63, 0.5);
 }
 
 /* Premium card style */

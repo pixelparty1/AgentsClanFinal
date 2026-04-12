@@ -27,6 +27,11 @@ const sponsors: Sponsor[] = [
   { id: 13, name: "Mantle", layer: "layer2" },
   { id: 14, name: "zkSync", layer: "layer2" },
   { id: 15, name: "Arbitrum", layer: "layer2" },
+  { id: 16, name: "Sponsor 16", layer: "ecosystem" },
+  { id: 17, name: "Sponsor 17", layer: "ecosystem" },
+  { id: 18, name: "Sponsor 18", layer: "ecosystem" },
+  { id: 19, name: "Sponsor 19", layer: "ecosystem" },
+  { id: 20, name: "Sponsor 20", layer: "ecosystem" },
 ];
 
 const filters: { label: string; value: Layer }[] = [
@@ -77,7 +82,7 @@ const TrustedBySection = () => {
               {activeFilter === f.value && (
                 <motion.span
                   layoutId="activeFilter"
-                  className="absolute inset-0 bg-[#00ff88] rounded-full"
+                  className="absolute inset-0 bg-[#D8FF3F] rounded-full"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}

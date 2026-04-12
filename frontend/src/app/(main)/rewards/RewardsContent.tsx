@@ -12,7 +12,6 @@ import SecondaryButton from '@/components/ui/SecondaryButton';
 const pillars = [
   { icon: Target, title: 'Daily Quests', description: 'Complete small, focused actions every day — ship tasks, help others, or learn something new.', href: '/rewards/daily-quests', label: 'View Daily Quests' },
   { icon: Trophy, title: 'Leaderboard', description: 'Climb the community leaderboard as you earn points from quests, events, and shipped projects.', href: '/rewards/leaderboard', label: 'View Leaderboard' },
-  { icon: Gift, title: 'Store', description: 'Redeem your hard-earned points for limited-edition merch, perks, and community unlocks.', href: '/store', label: 'Open Store' },
 ];
 
 export default function RewardsContent() {

@@ -9,7 +9,7 @@ const MembershipCTASection = () => {
     <section className="bg-[#0b1a13] py-24 md:py-36 border-t border-[#00ff88]/[0.08] relative overflow-hidden bg-grid-pattern">
       
       {/* Background Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] h-[800px] bg-[#00FF66]/[0.08] rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] h-[800px] bg-[#D8FF3F]/[0.08] rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-[1000px] mx-auto px-6 md:px-12 flex flex-col items-center text-center relative z-10">
         
@@ -45,7 +45,7 @@ const MembershipCTASection = () => {
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 mt-16 pt-12 border-t border-[#00ff88]/10 w-full max-w-[800px]">
             {['No lock-in contracts', 'NFT-backed identity', 'Cancel anytime'].map((text, i) => (
               <div key={text} className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.6)]" />
+                <div className="w-2 h-2 rounded-full bg-[#D8FF3F] shadow-[0_0_8px_rgba(216,255,63,0.6)]" />
                 <span className="text-[#e6fff5]/50 text-[14px] md:text-[15px] font-medium tracking-wide uppercase">{text}</span>
               </div>
             ))}

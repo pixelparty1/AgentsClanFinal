@@ -35,15 +35,15 @@ export const LayoutTextFlip = ({
 
       <motion.span
         layout
-        className="relative w-fit overflow-hidden rounded-lg border border-[#00FF66]/30 bg-[#00FF66]/10 px-5 py-2 font-sans text-2xl font-bold tracking-tight text-[#00FF66] md:text-4xl lg:text-5xl"
+        className="relative w-fit overflow-hidden rounded-lg border border-[#D8FF3F] bg-[#D8FF3F] px-5 py-2 font-sans text-2xl font-bold tracking-tight text-[#0b1a13] md:text-4xl lg:text-5xl"
         style={{
           boxShadow:
-            "0 0 20px rgba(0,255,102,0.15), inset 0 1px 0 rgba(0,255,102,0.1)",
+            "0 0 28px rgba(216,255,63,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
         }}
       >
         {/* Animated glow bar at bottom */}
         <motion.span
-          className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-[#00FF66] to-transparent"
+          className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8FF3F] to-transparent"
           animate={{ width: ["0%", "100%", "0%"] }}
           transition={{
             duration: duration / 1000,

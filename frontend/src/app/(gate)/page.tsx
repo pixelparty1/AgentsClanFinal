@@ -136,26 +136,7 @@ export default function Web3Gate() {
           }}
         >
           {/* Logo element directly above the CTA */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
-            style={{
-              marginBottom: '16px',
-              filter: 'drop-shadow(0 0 50px rgba(188,240,88,0.5)) drop-shadow(0 15px 25px rgba(0,0,0,0.6))',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt="AgentsClan Logo"
-              style={{
-                width: 'auto',
-                height: '130px',
-                objectFit: 'contain',
-              }}
-            />
-          </motion.div>
+          {/* Removed Logo */}
 
           {/* Enter Clan Button */}
           <button

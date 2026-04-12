@@ -42,7 +42,7 @@ const Navbar = () => {
             name: 'Rewards', 
             href: '/rewards', 
             hasDropdown: true, 
-            dropdownItems: ['Daily Quests', 'Leaderboard', 'Store'] 
+            dropdownItems: ['Daily Quests', 'Leaderboard'] 
         },
         { 
             name: 'Community', 
@@ -58,7 +58,6 @@ const Navbar = () => {
         'Achievements': '/achievements',
         'Daily Quests': '/rewards/daily-quests',
         'Leaderboard': '/rewards/leaderboard',
-        'Store': '/store',
         'Careers': '/community/careers',
         'Testimonials': '/community/testimonials',
         'Book a Call': '/book-a-call',
@@ -81,7 +80,7 @@ const Navbar = () => {
             {/* Left Side (Logo + Desktop Nav Links) */}
             <div className="flex items-center gap-8 md:gap-10">
                 {/* Logo */}
-                <Link href="/" className="relative w-[300px] md:w-[350px] h-[80px] md:h-[95px] hover:drop-shadow-[0_0_12px_rgba(0,255,136,0.4)] transition-all duration-300">
+                <Link href="/" className="relative w-[360px] md:w-[420px] h-[100px] md:h-[115px] hover:drop-shadow-[0_0_12px_rgba(0,255,136,0.4)] transition-all duration-300">
                     <Image
                         src="/logo.png"
                         alt="AgentsClan"
@@ -147,36 +146,32 @@ const Navbar = () => {
                             )}
                         </div>
                     ))}
+
+                    {/* Join the Class — plain nav link */}
+                    <a
+                        href="https://theagentclass.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative group flex items-center gap-1.5 text-[#e6fff5]/80 text-[14px] font-medium tracking-wide hover:text-[#00ff88] transition-all duration-300 py-2 whitespace-nowrap"
+                    >
+                        Join the Class
+                        <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-gradient-to-r from-[#00ff88] to-[#00ff88]/0 group-hover:w-full transition-all duration-300 rounded-full shadow-[0_0_6px_rgba(0,255,136,0.5)]" />
+                    </a>
                 </div>
             </div>
 
-            {/* Right Side - Button (Desktop) */}
-            <div className="hidden md:block">
-              {mounted && isConnected && address ? (
-                <button 
+            {/* Right Side — only show wallet controls when connected */}
+            {mounted && isConnected && address && (
+              <div className="hidden md:block">
+                <button
                   onClick={() => disconnect()}
                   className="group px-5 py-2.5 rounded-full border border-[#00ff88]/50 text-[#00ff88] text-sm font-mono font-semibold tracking-wide bg-[#00ff88]/5 backdrop-blur-sm hover:border-[#ff6b6b]/80 hover:bg-[#ff6b6b]/10 hover:text-[#ff6b6b] transition-all duration-300 shadow-[0_0_12px_rgba(0,255,136,0.15)]"
                 >
                   <span className="block group-hover:hidden">{shortAddress}</span>
                   <span className="hidden group-hover:block">Disconnect</span>
                 </button>
-              ) : (
-                <button
-                  onClick={async () => {
-                    try {
-                      const metaMask = connectors.find(c => c.id === 'metaMask' || c.name === 'MetaMask');
-                      if (metaMask) await connectAsync({ connector: metaMask });
-                    } catch (err) {
-                      console.error('Navbar Connect Error:', err);
-                    }
-                  }}
-                  disabled={isConnecting}
-                  className="relative group px-7 py-2.5 rounded-full bg-gradient-to-r from-[#00ff88] to-[#00cc66] text-[#0b1a13] text-sm font-bold uppercase tracking-widest hover:scale-[1.03] active:scale-95 transition-all duration-300 disabled:opacity-70 shadow-[0_0_20px_rgba(0,255,136,0.25)] hover:shadow-[0_0_30px_rgba(0,255,136,0.45)]"
-                >
-                  {isConnecting ? 'Connecting...' : 'AWAKEN'}
-                </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Mobile Menu Icon */}
             <button 
@@ -236,44 +231,37 @@ const Navbar = () => {
                                     </AnimatePresence>
                                 </div>
                             ))}
-                            {/* Mobile Dsessionshow if signed in */}
+
+                            {/* Mobile — Join the Class plain link */}
+                            <a
+                                href="https://theagentclass.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#e6fff5] text-base font-medium hover:text-[#00ff88] transition-colors duration-300"
+                            >
+                                Join the Class
+                            </a>
+
+                            {/* Mobile — wallet controls if connected */}
                             {mounted && isConnected && address && (
-                                <div className="flex justify-center">
+                                <>
                                     <Link
                                         href="/dashboard"
-                                        className="text-[#e6fff5] text-base font-medium hover:text-[#00ff88] transition-colors duration-300 py-2 px-4"
+                                        className="text-[#e6fff5] text-base font-medium hover:text-[#00ff88] transition-colors duration-300 py-2 px-4 text-center"
                                     >
                                         Dashboard
                                     </Link>
-                                </div>
-                            )}
-                                    {/* Mobile Wallet / Awaken Button */}
-                                    <div className="mt-6 pt-5 border-t border-[#00ff88]/10 w-full relative z-10 flex justify-center">
-                                      {mounted && isConnected && address ? (
-                                        <button 
-                                          onClick={() => disconnect()}
-                                          className="group px-6 py-3 rounded-full border border-[#00ff88]/50 text-[#00ff88] text-sm font-mono font-semibold tracking-wide bg-[#00ff88]/5 backdrop-blur-sm hover:border-[#ff6b6b]/80 hover:bg-[#ff6b6b]/10 hover:text-[#ff6b6b] transition-all duration-300"
-                                        >
-                                          <span className="block group-hover:hidden">{shortAddress}</span>
-                                          <span className="hidden group-hover:block">Disconnect</span>
-                                        </button>
-                                      ) : (
+                                    <div className="mt-2 pt-4 border-t border-[#00ff88]/10 w-full flex justify-center">
                                         <button
-                                          onClick={async () => {
-                                            try {
-                                              const metaMask = connectors.find(c => c.id === 'metaMask' || c.name === 'MetaMask');
-                                              if (metaMask) await connectAsync({ connector: metaMask });
-                                            } catch (err) {
-                                              console.error('Mobile Navbar Connect Error:', err);
-                                            }
-                                          }}
-                                          disabled={isConnecting}
-                                          className="w-full relative group px-8 py-4 rounded-full bg-gradient-to-r from-[#00ff88] to-[#00cc66] text-[#0b1a13] text-base font-bold uppercase tracking-widest hover:scale-[1.03] active:scale-95 transition-all duration-300 disabled:opacity-70 shadow-[0_0_24px_rgba(0,255,136,0.3)]"
+                                            onClick={() => disconnect()}
+                                            className="group px-6 py-3 rounded-full border border-[#00ff88]/50 text-[#00ff88] text-sm font-mono font-semibold tracking-wide bg-[#00ff88]/5 backdrop-blur-sm hover:border-[#ff6b6b]/80 hover:bg-[#ff6b6b]/10 hover:text-[#ff6b6b] transition-all duration-300"
                                         >
-                                          {isConnecting ? 'Connecting...' : 'AWAKEN'}
+                                            <span className="block group-hover:hidden">{shortAddress}</span>
+                                            <span className="hidden group-hover:block">Disconnect</span>
                                         </button>
-                                      )}
                                     </div>
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 )}

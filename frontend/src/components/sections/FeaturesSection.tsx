@@ -40,7 +40,7 @@ const FeaturesSection = () => {
         <div className="lg:w-1/2 lg:sticky lg:top-32 flex flex-col gap-6">
           <Reveal>
             <h2 className="text-[40px] md:text-[56px] lg:text-[72px] font-bold leading-[1.05] tracking-tight text-[#e6fff5]">
-              Built for the <br className="hidden md:block"/> Builders Who Ship
+              Built for the <br className="hidden md:block"/> <span className="text-[#D8FF3F] lime-text-glow">Builders</span> Who Ship
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
@@ -58,8 +58,8 @@ const FeaturesSection = () => {
               <Reveal key={feature.title} delay={0.1}>
                 <div className="relative bg-[#00ff88]/[0.04] border border-[#00ff88]/10 rounded-3xl p-8 md:p-10 flex flex-col gap-6 hover:border-[#00ff88]/25 hover:bg-[#00ff88]/[0.07] transition-all duration-300 hover:scale-[1.01] shadow-[0_0_0_rgba(0,255,136,0)] hover:shadow-[0_8px_32px_rgba(0,255,136,0.06)]">
                   <GlowingEffect spread={40} glow proximity={80} inactiveZone={0.02} borderWidth={2} />
-                  <div className="w-14 h-14 rounded-2xl bg-[#00ff88]/10 flex items-center justify-center">
-                    <Icon size={26} className="text-[#00ff88]" />
+                  <div className="w-14 h-14 rounded-2xl bg-[#D8FF3F]/10 flex items-center justify-center">
+                    <Icon size={26} className="text-[#D8FF3F]" />
                   </div>
                   <div className="flex flex-col gap-3">
                     <h3 className="text-[#e6fff5] text-[24px] md:text-[28px] font-semibold tracking-tight">{feature.title}</h3>

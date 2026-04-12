@@ -15,7 +15,7 @@ const SocialProofBar = () => {
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-16 lg:gap-24">
           {stats.map((text, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.6)]" />
+              <div className="w-2 h-2 rounded-full bg-[#D8FF3F] shadow-[0_0_8px_rgba(216,255,63,0.6)]" />
               <span className="text-[#e6fff5]/80 text-[16px] md:text-[18px] font-medium tracking-wide">
                 {text}
               </span>

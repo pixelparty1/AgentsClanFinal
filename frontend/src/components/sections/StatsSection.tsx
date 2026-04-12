@@ -18,7 +18,7 @@ const StatsSection = () => {
             <span
               className="text-[48px] md:text-[64px] lg:text-[80px] font-bold leading-none tracking-tight text-transparent bg-clip-text"
               style={{
-                backgroundImage: 'linear-gradient(145deg, #e6fff5 30%, rgba(0,255,136,0.5) 100%)',
+                backgroundImage: 'linear-gradient(145deg, #D8FF3F 0%, #e6fff5 40%, rgba(0,255,136,0.7) 100%)',
               }}
             >
               {stat.value}

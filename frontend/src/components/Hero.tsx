@@ -59,11 +59,11 @@ const Hero = () => {
             <span
               className="text-[24px] md:text-[32px] font-black tracking-[0.4em] uppercase leading-none"
               style={{
-                backgroundImage: 'linear-gradient(135deg, #4a9 0%, #e6fff5 30%, #00ff88 55%, #e6fff5 78%, #4a9 100%)',
+                backgroundImage: 'linear-gradient(135deg, #4a9 0%, #D8FF3F 25%, #e6fff5 50%, #00ff88 75%, #D8FF3F 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 color: 'transparent',
-                filter: 'drop-shadow(0 0 28px rgba(0,255,136,0.6))',
+                filter: 'drop-shadow(0 0 28px rgba(216,255,63,0.5))',
               }}
             >
               AGENTS CLAN
@@ -101,11 +101,11 @@ const Hero = () => {
                 className="text-2xl font-bold tracking-tight md:text-4xl lg:text-5xl"
                 style={{
                   backgroundImage:
-                    'linear-gradient(135deg, #e6fff5 0%, #00ff88 100%)',
+                    'linear-gradient(135deg, #D8FF3F 0%, #00ff88 100%)',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   color: 'transparent',
-                  filter: 'drop-shadow(0 0 16px rgba(0,255,136,0.4))',
+                  filter: 'drop-shadow(0 0 18px rgba(216,255,63,0.5))',
                 }}
               >
                 Growth
@@ -180,8 +180,8 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
           >
             <Link href="/sign-up" className="group relative w-full sm:w-auto">
-              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-[#00ff88] to-[#00cc66] opacity-50 blur-lg group-hover:opacity-80 transition-opacity duration-300" />
-              <div className="relative bg-gradient-to-r from-[#00ff88] to-[#00cc66] rounded-full px-10 py-4 overflow-hidden active:scale-95 hover:scale-[1.03] transition-all duration-300 shadow-[0_0_20px_rgba(0,255,136,0.3)]">
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-[#D8FF3F] to-[#00ff88] opacity-50 blur-lg group-hover:opacity-80 transition-opacity duration-300" />
+              <div className="relative bg-gradient-to-r from-[#D8FF3F] to-[#00ff88] rounded-full px-10 py-4 overflow-hidden active:scale-95 hover:scale-[1.03] transition-all duration-300 shadow-[0_0_20px_rgba(216,255,63,0.3)]">
                 <span className="text-[#0b1a13] text-[17px] font-semibold relative z-10">Join Community</span>
               </div>
             </Link>

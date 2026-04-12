@@ -86,8 +86,13 @@ async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // Guard: this function must only run in browser context
+  if (typeof window === 'undefined') {
+    throw new Error(`apiFetch called server-side for endpoint: ${endpoint}`);
+  }
+
   const walletAddress = getWalletAddress();
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -97,7 +102,16 @@ async function apiFetch<T>(
     (headers as Record<string, string>)['X-Wallet-Address'] = walletAddress;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Build an absolute URL — required by fetch in all environments
+  const base =
+    API_BASE_URL ||
+    (typeof window !== 'undefined'
+      ? `${window.location.origin}/api`
+      : 'http://localhost:3001/api');
+
+  const url = base.startsWith('http') ? `${base}${endpoint}` : `${window.location.origin}${base}${endpoint}`;
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });

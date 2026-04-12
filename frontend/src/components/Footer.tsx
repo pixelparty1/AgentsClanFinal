@@ -51,9 +51,11 @@ const Footer = () => {
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-[#e6fff5]/80 text-xs font-semibold uppercase tracking-widest">Community</span>
-            <Link href="#" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">Discord</Link>
-            <Link href="#" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">Twitter / X</Link>
-            <Link href="#" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">Leaderboard</Link>
+            <a href="https://x.com/AgentsClan2" target="_blank" rel="noopener noreferrer" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">Twitter / X</a>
+            <a href="https://www.instagram.com/agents_clan2" target="_blank" rel="noopener noreferrer" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">Instagram</a>
+            <a href="https://www.linkedin.com/company/agents-clan/?viewAsMember=true" target="_blank" rel="noopener noreferrer" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">LinkedIn</a>
+            <a href="https://www.youtube.com/@AgentsClan2" target="_blank" rel="noopener noreferrer" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">YouTube</a>
+            <Link href="/rewards/leaderboard" className="text-[#e6fff5]/40 text-sm hover:text-[#00ff88] transition-colors duration-300">Leaderboard</Link>
           </div>
         </div>
 

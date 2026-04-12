@@ -44,13 +44,6 @@ const quickLinks = [
     color: '#00ff88',
   },
   {
-    title: 'Store',
-    description: 'Exclusive merch and community gear.',
-    href: '/store',
-    icon: ShoppingBag,
-    color: '#00cc66',
-  },
-  {
     title: 'Achievements',
     description: 'Track your badges and milestones.',
     href: '/achievements',
