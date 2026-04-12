@@ -28,9 +28,9 @@ const mentors = [
   },
   {
     id: 3,
-    name: 'Alex Rivera',
-    role: 'DeFi Protocol Architect',
-    bio: 'Former lead engineer at top DEXs. Designs secure tokenomics and scalable smart contract architectures.',
+    name: 'Rohit Waghela',
+    role: 'Head of Ecosystem Growth @Agents Clan',
+    bio: 'Brand Strategy, GTM & Fundraising | Agentic AI · SaaS · Fintech · Web3',
     image: '/mentors/4.jpeg',
   },
 ];
