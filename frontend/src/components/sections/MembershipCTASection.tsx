@@ -3,16 +3,18 @@
 import Reveal from '@/components/ui/Reveal';
 import SecondaryButton from '@/components/ui/SecondaryButton';
 
+import { MessageSquare, Ticket, Target, Trophy, Lock, Users, Video, IdCard, Gift, Crown } from 'lucide-react';
+
 const benefits = [
-  { text: 'Community Discord access', icon: '💬', description: 'Join the builder conversation' },
-  { text: 'Attend public events', icon: '🎟️', description: 'Access to top technical meetups' },
-  { text: 'Daily quests', icon: '🎯', description: 'Earn rewards by contributing' },
-  { text: 'Public leaderboard', icon: '🏆', description: 'Rank among top Web3 builders' },
-  { text: 'Private builder channels', icon: '🔒', description: 'Exclusive networking groups' },
-  { text: 'Mentorship access', icon: '🤝', description: 'Learn from industry experts' },
-  { text: 'Workshop recordings', icon: '📹', description: 'Unlimited access to past sessions' },
-  { text: 'NFT membership card', icon: '💳', description: 'On-chain proof of identity' },
-  { text: 'Merch reward eligibility', icon: '👕', description: 'Exclusive AgentsClan swag' },
+  { text: 'Community Discord access', icon: MessageSquare, description: 'Join the builder conversation' },
+  { text: 'Attend public events', icon: Ticket, description: 'Access to top technical meetups' },
+  { text: 'Daily quests', icon: Target, description: 'Earn rewards by contributing' },
+  { text: 'Public leaderboard', icon: Trophy, description: 'Rank among top Web3 builders' },
+  { text: 'Private builder channels', icon: Lock, description: 'Exclusive networking groups' },
+  { text: 'Mentorship access', icon: Users, description: 'Learn from industry experts' },
+  { text: 'Workshop recordings', icon: Video, description: 'Unlimited access to past sessions' },
+  { text: 'NFT membership card', icon: IdCard, description: 'On-chain proof of identity' },
+  { text: 'Merch reward eligibility', icon: Gift, description: 'Exclusive AgentsClan swag' },
 ];
 
 const MembershipCTASection = () => {
@@ -29,7 +31,8 @@ const MembershipCTASection = () => {
             
             {/* Top decorative element mimicking the 3d gift/badge */}
             <div className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 w-24 h-24 md:w-32 md:h-32 bg-gradient-to-b from-[#0b1a13] to-[#0a140f] rounded-full flex items-center justify-center border-2 border-[#00ff88]/30 shadow-[0_0_30px_rgba(0,255,136,0.3)] backdrop-blur-md">
-              <span className="text-4xl md:text-5xl drop-shadow-[0_0_15px_rgba(0,255,136,0.8)]">👑</span>
+              <div className="absolute inset-0 rounded-full bg-[#00ff88]/5 animate-pulse" />
+              <Crown className="w-10 h-10 md:w-14 md:h-14 text-[#00ff88] drop-shadow-[0_0_15px_rgba(0,255,136,0.8)]" />
             </div>
 
             <div className="text-center mb-8">
@@ -45,8 +48,8 @@ const MembershipCTASection = () => {
             <div className="bg-[#020503]/80 rounded-[20px] border border-[#00ff88]/10 p-3 md:p-6 flex flex-col gap-2 md:gap-3">
               {benefits.map((benefit, idx) => (
                 <div key={idx} className="flex items-center gap-4 bg-white/[0.02] hover:bg-[#00ff88]/[0.08] transition-colors border border-white/[0.02] hover:border-[#00ff88]/30 rounded-xl p-3 md:p-4 group">
-                  <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-black/60 rounded-full flex items-center justify-center text-xl shadow-inner border border-white/5 group-hover:scale-110 transition-transform duration-300">
-                    {benefit.icon}
+                  <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-black/60 rounded-full flex items-center justify-center text-xl shadow-inner border border-white/5 group-hover:scale-110 group-hover:border-[#00ff88]/50 group-hover:shadow-[0_0_15px_rgba(0,255,136,0.2)] transition-all duration-300">
+                    <benefit.icon className="w-5 h-5 md:w-6 md:h-6 text-[#00ff88]" />
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-[#e6fff5] font-semibold text-[14px] md:text-[16px] tracking-wide">{benefit.text}</span>

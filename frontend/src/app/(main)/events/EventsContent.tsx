@@ -8,6 +8,35 @@ import GradientHeading from '@/components/ui/GradientHeading';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
 import { getEvents, type Event } from '@/lib/admin';
+import { ExternalLink } from 'lucide-react';
+
+const hardcodedPastEvents = [
+  { title: "INTRO TO BLOCKCHAIN : by MST", location: "MYSORE", date: "2024", link: "https://luma.com/1lpl1zpq", socialLink: null },
+  { title: "BYBIT CAMPUS CONNECT - RV UNI", location: "BENGALORE", date: "2024", link: "https://luma.com/l9ak6xxg", socialLink: null },
+  { title: "BYBIT CAMPUS CONNECT GCET", location: "HYDERABAD", date: "2024", link: "https://luma.com/q5ku3mm8", socialLink: "https://x.com/AgentsClan2/status/2016790509101207999" },
+  { title: "P2P.Foundation : Freedom Through Crypto", location: "BENGALORE", date: "2024", link: "https://luma.com/te8z4j11", socialLink: "https://x.com/AgentsClan2/status/2021598126969372989" },
+  { title: "INDIA ONCHAIN TOUR: NORTHERN EDITION – 01", location: "DELHI", date: "2024", link: "https://luma.com/gva4m7fe", socialLink: "https://x.com/AgentsClan2/status/2012922666156769592" },
+  { title: "DOT CONNECT (POLKADOT)", location: "BENGALORE", date: "2025", link: "https://lu.ma/iejuwntd", socialLink: "https://x.com/AgentsClan2/status/1952001367528149208" },
+  { title: "ROAD TO SUB0 - BUILDERS PARTY MYSORE", location: "MYSORE", date: "2025", link: "https://luma.com/qu09pe8l", socialLink: "https://x.com/AgentsClan2/status/1976991321849033012" },
+  { title: "STELLAR IGNITE", location: "GOA", date: "2025", link: "https://t.co/r4Mt13ccsJ", socialLink: "https://x.com/AgentsClan2/status/1967590370361159759" },
+  { title: "DOT BITE (POLKADOT)", location: "BENGALURU", date: "2025", link: "https://lu.ma/j50ortrm", socialLink: "https://x.com/AgentsClan2/status/1926654859140297025" },
+  { title: "STELLARVERSE (STELLAR)", location: "BENGALURU", date: "2025", link: "https://lu.ma/6szq1qup", socialLink: "https://x.com/AgentsClan2/status/1949799294703386814" },
+  { title: "GAMENIGHT COIMBATORE", location: "COIMBATORE", date: "2025", link: "https://lu.ma/ugwuuscg", socialLink: "https://x.com/AgentsClan2/status/1944068108953571648" },
+  { title: "GAMENIGHT CHANDIGHAR", location: "CHANDIGHAR", date: "2025", link: "https://lu.ma/dqgjoewk", socialLink: "https://x.com/AgentsClan2/status/1942965477069750678" },
+  { title: "GAMENIGHT BENGALURU", location: "BENGALURU", date: "2025", link: "https://lu.ma/f4mcwwla", socialLink: "https://x.com/AgentsClan2/status/1942965477069750678" },
+  { title: "NAMMA POLKADOT BLR EDITION", location: "BENGALURU", date: "2025", link: "https://lu.ma/t0oi8tvt", socialLink: "https://x.com/AgentsClan2/status/1917260809090261162" },
+  { title: "Road to AssetHub Hackathon", location: "HYDERABAD", date: "2025", link: "https://lu.ma/7m7vn26g", socialLink: "https://x.com/AgentsClan2/status/1929936544049311935" },
+  { title: "Road to AssetHub Hackathon", location: "BENGALORE", date: "2025", link: "https://lu.ma/79a7flh8", socialLink: "https://x.com/DOTmeetups/status/1938639250058064267" },
+  { title: "STELLAR GOSSIPS ( WOMEN ONLY )", location: "BENGALURU", date: "2025", link: "https://lu.ma/zg1hxvs7", socialLink: "https://x.com/AgentsClan2/status/1903783023499178327" },
+  { title: "ZERO TO STELLAR", location: "CHENNAI", date: "2025", link: "https://lu.ma/15uyvbcx", socialLink: "https://x.com/nithinanikin/status/1906192593857470472" },
+  { title: "Team1 Game Night: Coimbatore", location: "COIMBATORE", date: "2025", link: "https://lu.ma/i1qhso2r", socialLink: "https://x.com/AgentsClan2/status/1931739330227433650" },
+  { title: "Team1 Game Night: Bangalore", location: "BENGALURU", date: "2025", link: "https://lu.ma/mzdkb0th", socialLink: "https://x.com/AgentsClan2/status/1931739330227433650" },
+  { title: "SANDBOX CREATORS CHALLENGE", location: "ONLINE", date: "2025", link: "https://lu.ma/5ftyf8a0", socialLink: "https://x.com/AgentsClan2/status/1904115977648034287" },
+  { title: "P2Pdotme Movie Night", location: "BENGALURU", date: "2025", link: "https://lu.ma/in9zib3k", socialLink: "https://x.com/AgentsClan2/status/1931015166474527144" },
+  { title: "SHAREUM INDIA", location: "BENGALURU", date: "2025", link: "https://lu.ma/m7vlzolz", socialLink: "https://x.com/tejaskiranm/status/1908518961534427601" },
+  { title: "P2P.ME SUPPER", location: "BENGALURU", date: "2025", link: "https://lu.ma/2ndsfwft", socialLink: "https://www.linkedin.com/posts/vinith-n-775a37259_what-an-incredible-evening-had-activity" },
+  { title: "CSPR Blockchain India - Meet and Greet", location: "BENGALURU", date: "2025", link: "https://lu.ma/rlrbc02g", socialLink: "https://www.linkedin.com/posts/vinith-n-775a37259_networking-community-collaboration-activity" }
+];
 
 export default function EventsContent() {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
@@ -46,6 +75,27 @@ export default function EventsContent() {
       hour12: true,
     });
   };
+
+  const combinedPastEvents = [
+    ...pastEvents.map(e => ({
+      id: e.$id,
+      title: e.title,
+      type: e.event_type || 'Event',
+      date: formatDate(e.event_date),
+      location: e.location || 'Online',
+      lumaLink: null,
+      socialLink: null
+    })),
+    ...hardcodedPastEvents.map((e, index) => ({
+      id: `hardcoded-past-${index}`,
+      title: e.title,
+      type: 'Hosted Event',
+      date: e.date,
+      location: e.location,
+      lumaLink: e.link,
+      socialLink: e.socialLink
+    }))
+  ];
   return (
     <main className="bg-black min-h-screen">
       {/* Page Hero */}
@@ -131,34 +181,43 @@ export default function EventsContent() {
           Past Events
         </motion.h2>
         <div className="flex flex-col gap-3">
-          {pastEvents.length === 0 ? (
+          {combinedPastEvents.length === 0 ? (
             <div className="text-center py-12 text-gray-500">No past events yet</div>
           ) : (
-            pastEvents.map((event, i) => (
+            combinedPastEvents.map((event, i) => (
               <motion.div
-                key={event.$id}
+                key={event.id}
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: '-30px' }}
-                transition={{ duration: 0.45, delay: i * 0.07 }}
-                className="bg-white/5 border border-white/10 rounded-xl px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/20 transition-colors"
+                transition={{ duration: 0.45, delay: (i % 10) * 0.05 }}
+                className="bg-white/5 border border-white/10 rounded-xl px-5 py-4 md:px-6 md:py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/20 transition-colors"
               >
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="inline-flex w-fit items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10">
-                    <span className="text-white/60 text-xs font-medium capitalize">{event.event_type}</span>
+                  <div className="inline-flex w-fit items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 shrink-0">
+                    <span className="text-white/60 text-xs font-medium capitalize">{event.type}</span>
                   </div>
                   <div>
-                    <h3 className="text-white text-sm font-semibold">{event.title}</h3>
-                    <div className="flex items-center gap-4 mt-1">
-                      <div className="flex items-center gap-1.5"><Calendar size={11} className="text-white/30" /><span className="text-white/40 text-xs">{formatDate(event.event_date)}</span></div>
+                    <h3 className="text-white text-sm md:text-[15px] font-semibold">{event.title}</h3>
+                    <div className="flex items-center gap-4 mt-1.5 flex-wrap">
+                      <div className="flex items-center gap-1.5"><Calendar size={12} className="text-[#00FF88]" /><span className="text-white/50 text-xs">{event.date}</span></div>
                       {event.location && (
-                        <div className="flex items-center gap-1.5"><MapPin size={11} className="text-white/30" /><span className="text-white/40 text-xs">{event.location}</span></div>
+                        <div className="flex items-center gap-1.5"><MapPin size={12} className="text-[#00FF88]" /><span className="text-white/50 text-xs">{event.location}</span></div>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className="text-white/40 text-xs">{event.event_type}</span>
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  {event.lumaLink && (
+                    <a href={event.lumaLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors text-xs font-medium border border-indigo-500/20">
+                      Luma <ExternalLink size={11} />
+                    </a>
+                  )}
+                  {event.socialLink && (
+                    <a href={event.socialLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 hover:text-blue-200 transition-colors text-xs font-medium border border-blue-500/20">
+                      Social <ExternalLink size={11} />
+                    </a>
+                  )}
                 </div>
               </motion.div>
             ))
