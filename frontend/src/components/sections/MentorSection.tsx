@@ -10,7 +10,7 @@ const mentors = [
     name: 'Vinith N',
     role: 'Founder @AgentsClan',
     bio: 'Blockchain Ecosystem Growth | BD and Consultant | ETHIndia | GTM Strategy | PR & Community Engagement | Hackathon Winner @Tele Mini Hack | 250+ Technical Web2/3 Events Hosted | 5x Mentor',
-    image: '/mentors/1.jpeg',
+    image: '/mentors/vinit.jpeg',
     link: 'https://www.linkedin.com/in/vinith-n-775a37259/',
   },
   {
@@ -18,7 +18,7 @@ const mentors = [
     name: 'Rohit Waghela',
     role: 'Head of Ecosystem Growth @Agents Clan',
     bio: 'Brand Strategy, GTM & Fundraising | Agentic AI · SaaS · Fintech · Web3',
-    image: '/mentors/2.jpeg',
+    image: '/mentors/rohit.jpeg',
     link: 'https://www.linkedin.com/in/wrohit/',
   },
   {
@@ -26,7 +26,7 @@ const mentors = [
     name: 'Dibyo Majumder',
     role: 'Founder @ TURF',
     bio: 'dAI Researcher, Prev CEO Instaraise, 2x Entrepreneur | Harvard Business School',
-    image: '/mentors/3.jpeg',
+    image: '/mentors/db.jpeg',
     link: 'https://www.linkedin.com/in/dibyo-majumder/',
   },
   {
@@ -34,7 +34,7 @@ const mentors = [
     name: 'Fardeen Khan',
     role: 'AI x Blockchain Researcher',
     bio: 'Solving x Building emerging things around Networks, Life, Intelligence & Consciousness. Complexity Scientist.',
-    image: '/mentors/4.jpeg',
+    image: '/mentors/fareed.jpeg',
     link: 'https://www.linkedin.com/in/fardeen-khan-093938212/',
   },
 ];

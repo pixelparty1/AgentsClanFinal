@@ -126,14 +126,15 @@ async function apiFetch<T>(
       headers,
     });
   } catch (err) {
-    console.error(`[API] Connection Error: ${url}`, err);
+    // console.error(`[API] Connection Error: ${url}`, err);
     // Provide a more helpful error message for common network failures
     const isNetworkError = err instanceof Error && (err.name === 'TypeError' || err.message.includes('fetch'));
-    throw new Error(
-      isNetworkError 
-        ? `Failed to Connect: The API at ${url} is unreachable. Ensure the backend server is running on port 3001 and CORS is enabled.` 
-        : `Network Error: ${err instanceof Error ? err.message : 'Unknown network failure'}`
-    );
+    const errorMessage = isNetworkError 
+        ? `Failed to Connect: The API at ${url} is unreachable. Ensure the backend server is running and CORS is enabled.` 
+        : `Network Error: ${err instanceof Error ? err.message : 'Unknown network failure'}`;
+        
+    // Return a structured error to prevent unhandled promise rejections crashing Next.js dev overlay
+    return { success: false, error: errorMessage } as unknown as T;
   }
 
   if (!response.ok) {
@@ -150,7 +151,7 @@ async function apiFetch<T>(
       errorMessage = `HTTP ${response.status}: ${response.statusText || 'Error'}`;
     }
     
-    throw new Error(errorMessage);
+    return { success: false, error: errorMessage } as unknown as T;
   }
 
   return response.json();

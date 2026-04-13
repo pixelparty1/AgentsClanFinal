@@ -289,11 +289,17 @@ export async function deletePost(id: string): Promise<void> {
 
 // --- Events ---
 export async function getEvents(limit = 50): Promise<Event[]> {
-  const response = await eventsApi.list({ limit });
-  if (!response.success) {
-    throw new Error(response.error as string);
+  try {
+    const response = await eventsApi.list({ limit });
+    if (!response || !response.success) {
+      console.warn('API Error during getEvents:', response?.error);
+      return [];
+    }
+    return (response.data?.items || []) as Event[];
+  } catch (error) {
+    console.warn('API connection failed for getEvents. Backend might be down.');
+    return [];
   }
-  return response.data.items as Event[];
 }
 
 export async function createEvent(data: CreateData<Event>): Promise<Event> {
@@ -366,11 +372,17 @@ export async function getMemberships(limit = 100): Promise<Membership[]> {
 
 // --- Quests ---
 export async function getQuests(): Promise<Quest[]> {
-  const response = await questsApi.list({ limit: 200 });
-  if (!response.success) {
-    throw new Error((response as any).error || 'Failed to fetch quests');
+  try {
+    const response = await questsApi.list({ limit: 200 });
+    if (!response || !response.success) {
+      console.warn('API Error during getQuests:', (response as any)?.error);
+      return [];
+    }
+    return (response.data?.items || []) as Quest[];
+  } catch (error) {
+    console.warn('API Error during getQuests');
+    return [];
   }
-  return (response.data?.items || []) as Quest[];
 }
 
 export async function createQuest(data: CreateData<Quest>): Promise<Quest> {
@@ -394,9 +406,17 @@ export async function deleteQuest(id: string): Promise<void> {
 
 // --- Quest Submissions ---
 export async function getQuestSubmissions(status?: QuestSubmission['status']): Promise<QuestSubmission[]> {
-  const response = await questsApi.getSubmissions({ status, limit: 200 });
-  if (!response.success) {
-    throw new Error((response as any).error || 'Failed to fetch submissions');
+  let response;
+  try {
+    response = await questsApi.getSubmissions({ status, limit: 200 });
+  } catch (error) {
+    console.warn('API connection failed for getQuestSubmissions');
+    return [];
+  }
+  
+  if (!response || !response.success) {
+    console.warn('API Error during getQuestSubmissions:', (response as any)?.error);
+    return [];
   }
 
   const normalized = (response.data?.items || []).map((doc: any) => {
