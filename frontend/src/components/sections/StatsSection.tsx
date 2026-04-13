@@ -3,10 +3,10 @@
 import Reveal from '@/components/ui/Reveal';
 
 const stats = [
-  { value: '2,000+', label: 'Community Members' },
-  { value: '50+', label: 'Events Hosted' },
-  { value: '120+', label: 'Projects Shipped' },
-  { value: '15+', label: 'City Chapters' },
+  { value: '10k+', label: 'Community Members' },
+  { value: '100+', label: 'Events Hosted' },
+  { value: '200+', label: 'Projects Shipped' },
+  { value: '20+', label: 'World Wide City Chapters' },
 ];
 
 const StatsSection = () => {
